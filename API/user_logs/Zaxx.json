@@ -1,0 +1,68 @@
+[
+  {
+    "type": "chat_private",
+    "title": "Chat ke test",
+    "description": "Pesan: ppp",
+    "timestamp": 1789115683605
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: FC_INVIS",
+    "description": "Target: 6285839013133 | Mode: private | Role: developer",
+    "timestamp": 1789133885439
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: FC_INVIS",
+    "description": "Target: 6285839013133 | Mode: private | Role: developer",
+    "timestamp": 1789450526133
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: DELAYXBLANK",
+    "description": "Target: 6285840753504 | Mode: private | Role: developer",
+    "timestamp": 1789455958288
+  },
+  {
+    "type": "chat_private",
+    "title": "Chat ke GUS",
+    "description": "Pesan: apa mek? 🗿",
+    "timestamp": 1789463069677
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: GACOR_FULL",
+    "description": "Target: 6285839013133 | Mode: private | Role: developer",
+    "timestamp": 1789476278678
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: FC_INVIS",
+    "description": "Target: 6285839013133 | Mode: private | Role: developer",
+    "timestamp": 1789476373212
+  },
+  {
+    "type": "chat_private",
+    "title": "Chat ke Kelzz",
+    "description": "Pesan: bangke",
+    "timestamp": 1789477260656
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: FC_INVIS",
+    "description": "Target: 6285839013133 | Mode: private | Role: developer",
+    "timestamp": 1789539953649
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: FC",
+    "description": "Target: 6285839013133 | Mode: private | Role: developer",
+    "timestamp": 1789540035612
+  },
+  {
+    "type": "bug",
+    "title": "Kirim Bug: FC",
+    "description": "Target: 6289523155770 | Mode: private | Role: developer",
+    "timestamp": 1789540090300
+  }
+]
