@@ -4,12 +4,15 @@ on:
   push:
     branches: [ "main" ]
 
+permissions:
+  contents: write # 🔥 WAJIB BUAT BIKIN RELEASE
+
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./BASE/BASE # 🔥 KARENA FOLDER TUAN ADA DI DALAM BASE/BASE
+        working-directory: ./BASE/BASE
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v3
@@ -22,8 +25,10 @@ jobs:
         channel: 'stable'
     - run: flutter clean
     - run: flutter pub get
-    - run: flutter build apk --release --no-tree-shake-icons # 🔥 TAMBAHAN BIAR FONT AMAN
-    - uses: actions/upload-artifact@v4
+    - run: flutter build apk --release --no-tree-shake-icons
+    - name: Upload APK to Release
+      uses: softprops/action-gh-release@v1
       with:
-        name: release-apk
-        path: ./BASE/BASE/build/app/outputs/flutter-apk/app-release.apk
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release APK v1.0.${{ github.run_number }}
+        files: ./BASE/BASE/build/app/outputs/flutter-apk/app-release.apk
