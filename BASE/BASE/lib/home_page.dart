@@ -416,13 +416,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     try {
       final encodedTarget = Uri.encodeComponent(rawInput);
       
-      // ✅ FIX UTAMA: Kirim senderMode ke server
-      final url = '$baseUrl/sendBug'
-          '?key=$key'
-          '&target=$encodedTarget'
-          '&bug=${_selectedBugId}'
-          '&senderMode=$_selectedSender';
-      
+      // 🔥 LOGIKA BARU: BEDAIN ENDPOINT NOMOR DAN GROUP
+// Cek apakah target yang dimasukin itu link grup (chat.whatsapp.com) atau JID grup (@g.us)
+bool isTargetGroup = rawInput.contains('chat.whatsapp.com') || rawInput.contains('@g.us');
+
+// Tentukan endpoint: Kalau grup pake /sendBugGroup, kalau nomor pake /sendBug
+String endpoint = isTargetGroup ? '/sendBugGroup' : '/sendBug';
+
+// Susun URL-nya
+final url = '$baseUrl$endpoint'
+    '?key=$key'
+    '&target=$encodedTarget'
+    '&bug=$_selectedBugId'
+    '&senderMode=$_selectedSender';
       print('📤 [HOME] Sending bug: $url');
       print('📤 [HOME] Mode: $_selectedSender | Bug: $_selectedBugId | Target: $rawInput');
       
