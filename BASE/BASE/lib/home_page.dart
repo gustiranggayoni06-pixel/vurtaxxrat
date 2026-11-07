@@ -369,95 +369,97 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   // ─── SEND BUG — ✅ FIX: KIRIM senderMode ───────────────────────
-  Future<void> _sendBug() async {
-    final rawInput = targetController.text.trim();
-    final key = widget.sessionKey;
+  // ─── SEND BUG — ✅ FIX: KIRIM senderMode ───────────────────────
+Future<void> _sendBug() async {
+  final rawInput = targetController.text.trim();
+  final key = widget.sessionKey;
 
-    if (_selectedBugMode == "group") {
-      if (!isValidGroupLink(rawInput)) {
-        _showAlert("❌ Link Tidak Valid",
-            "Masukkan link grup WhatsApp yang valid.\nContoh: https://chat.whatsapp.com/...");
-        return;
-      }
-    } else {
-      if (formatPhoneNumber(rawInput) == null) {
-        _showAlert("❌ Nomor Tidak Valid",
-            "Gunakan format internasional.\nContoh: +62812xxxxxxxx");
-        return;
-      }
-    }
-
-    if (_selectedSender == 'global' && !canAccessGlobalSender) {
-      _showAlert("❌ Akses Ditolak",
-          "Sender Global hanya untuk Developer, Founder, Kingz, High Owner, Owner, TK, Admin & VIP!");
+  if (_selectedBugMode == "group") {
+    if (!isValidGroupLink(rawInput)) {
+      _showAlert("❌ Link Tidak Valid",
+          "Masukkan link grup WhatsApp yang valid.\nContoh: https://chat.whatsapp.com/...");
       return;
     }
-
-    if (_selectedBugId == null || _selectedBugId!.isEmpty) {
-      _showAlert("❌ No Bug Selected", "Pilih 1 bug untuk dikirim.");
+  } else {
+    if (formatPhoneNumber(rawInput) == null) {
+      _showAlert("❌ Nomor Tidak Valid",
+          "Gunakan format internasional.\nContoh: +62812xxxxxxxx");
       return;
-    }
-
-    if (_selectedSender == 'private' && _privateSenderCount == 0) {
-      _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
-      return;
-    }
-    if (_selectedSender == 'global' && _globalSenderCount == 0) {
-      _showAlert("❌ No Global Sender", "Tidak ada global sender tersedia.");
-      return;
-    }
-
-    setState(() {
-      _isSending = true;
-      _responseMessage = null;
-    });
-    _resultCtrl.reset();
-
-    try {
-      final encodedTarget = Uri.encodeComponent(rawInput);
-      
-      // 🔥 LOGIKA BARU: BEDAIN ENDPOINT NOMOR DAN GROUP
-// Cek apakah target yang dimasukin itu link grup (chat.whatsapp.com) atau JID grup (@g.us)
-bool isTargetGroup = rawInput.contains('chat.whatsapp.com') || rawInput.contains('@g.us');
-
-// Tentukan endpoint: Kalau grup pake /sendBugGroup, kalau nomor pake /sendBug
-String endpoint = isTargetGroup ? '/sendBugGroup' : '/sendBug';
-
-// Susun URL-nya
-final url = '$baseUrl$endpoint'
-    '?key=$key'
-    '&target=$encodedTarget'
-    '&bug=$_selectedBugId'
-    '&senderMode=$_selectedSender';
-      print('📤 [HOME] Sending bug: $url');
-      print('📤 [HOME] Mode: $_selectedSender | Bug: $_selectedBugId | Target: $rawInput');
-      
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-      final data = jsonDecode(res.body);
-
-      if (data['valid'] == false) {
-        _setResponse('error', 'Session key tidak valid. Silakan login ulang.');
-      } else if (data['cooldown'] == true) {
-        final wait = data['wait'] ?? 0;
-        _setResponse('warning', 'Cooldown aktif! Tunggu $wait detik lagi.');
-      } else if (data['sended'] == true) {
-        final role = data['role'] ?? widget.role;
-        _setResponse('success', 'Bug berhasil dikirim ke $rawInput! [${_roleDisplayName(role)}]');
-        targetController.clear();
-      } else {
-        _setResponse('error', data['message'] ?? 'Gagal mengirim. Coba lagi.');
-      }
-    } on Exception catch (e) {
-      if (e.toString().contains('TimeoutException')) {
-        _setResponse('error', 'Request timeout. Periksa koneksi internet.');
-      } else {
-        _setResponse('error', 'Koneksi error: ${e.toString()}');
-      }
-    } finally {
-      if (mounted) setState(() => _isSending = false);
     }
   }
 
+  if (_selectedSender == 'global' && !canAccessGlobalSender) {
+    _showAlert("❌ Akses Ditolak",
+        "Sender Global hanya untuk Developer, Founder, Kingz, High Owner, Owner, TK, Admin & VIP!");
+    return;
+  }
+
+  if (_selectedBugId == null || _selectedBugId!.isEmpty) {
+    _showAlert("❌ No Bug Selected", "Pilih 1 bug untuk dikirim.");
+    return;
+  }
+
+  if (_selectedSender == 'private' && _privateSenderCount == 0) {
+    _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
+    return;
+  }
+  if (_selectedSender == 'global' && _globalSenderCount == 0) {
+    _showAlert("❌ No Global Sender", "Tidak ada global sender tersedia.");
+    return;
+  }
+
+  setState(() {
+    _isSending = true;
+    _responseMessage = null;
+  });
+  _resultCtrl.reset();
+
+  try {
+    final encodedTarget = Uri.encodeComponent(rawInput);
+    
+    // ✅ FIX: Pengecekan lebih ketat pake RegEx (Hapus yang dobel)
+    final groupRegex = RegExp(r'chat\.whatsapp\.com\/[A-Za-z0-9]+');
+    final isTargetGroup = groupRegex.hasMatch(rawInput) || rawInput.endsWith('@g.us');
+
+    // ✅ FIX: Deklarasiin variabel endpoint
+    final endpoint = isTargetGroup ? '/sendBugGroup' : '/sendBug';
+    
+    // Susun URL-nya
+    final url = '$baseUrl$endpoint'
+        '?key=$key'
+        '&target=$encodedTarget'
+        '&bug=$_selectedBugId'
+        '&senderMode=$_selectedSender';
+        
+    print('📤 [HOME] Sending bug: $url');
+    print('📤 [HOME] Mode: $_selectedSender | Bug: $_selectedBugId | Target: $rawInput');
+    
+    final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
+    final data = jsonDecode(res.body);
+
+    if (data['valid'] == false) {
+      _setResponse('error', 'Session key tidak valid. Silakan login ulang.');
+    } else if (data['cooldown'] == true) {
+      final wait = data['wait'] ?? 0;
+      _setResponse('warning', 'Cooldown aktif! Tunggu $wait detik lagi.');
+    } else if (data['sended'] == true) {
+      final role = data['role'] ?? widget.role;
+      _setResponse('success', 'Bug berhasil dikirim ke $rawInput! [${_roleDisplayName(role)}]');
+      targetController.clear();
+    } else {
+      _setResponse('error', data['message'] ?? 'Gagal mengirim. Coba lagi.');
+    }
+  } on Exception catch (e) {
+    if (e.toString().contains('TimeoutException')) {
+      _setResponse('error', 'Request timeout. Periksa koneksi internet.');
+    } else {
+      _setResponse('error', 'Koneksi error: ${e.toString()}');
+    }
+  } finally {
+    if (mounted) setState(() => _isSending = false);
+  }
+}
+  
   void _showAlert(String title, String msg) {
     showDialog(
       context: context,
@@ -715,245 +717,254 @@ final url = '$baseUrl$endpoint'
     return Container(width: 1, height: 52, color: _glassBorder);
   }
 
-  // ─── BUILD TARGET INPUT DENGAN MODE GROUP ────────────────────────
+  // ─── BUILD TARGET INPUT DENGAN MODE 
   Widget _buildNomorDanBugPanel() {
-    return _glassCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.phone_android_rounded, color: _textWhite, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'TARGET',
-                style: TextStyle(
-                  color: _textWhite,
-                  fontFamily: 'Astral',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  letterSpacing: 2,
-                ),
+  // ✅ 1. TARUH LOGIKA FILTER DI SINI (DI DALAM FUNGSI)
+  final displayedBugs = _selectedBugMode == "group"
+      ? widget.listBug.where((b) => b['type'] == 'group').toList()
+      : widget.listBug.where((b) => b['type'] == 'nomor' || b['type'] == null).toList();
+
+  return _glassCard(
+    padding: const EdgeInsets.all(14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.phone_android_rounded, color: _textWhite, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'TARGET',
+              style: TextStyle(
+                color: _textWhite,
+                fontFamily: 'Astral',
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 2,
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: _blackColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _glassBorder),
-                ),
-                child: Row(
-                  children: [
-                    _buildModeTab('NOMOR', _selectedBugMode == 'number'),
-                    const SizedBox(width: 4),
-                    _buildModeTab('GROUP', _selectedBugMode == 'group'),
-                  ],
-                ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: _blackColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _glassBorder),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _glassColor,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _glassBorder, width: 1),
-                ),
-                child: TextField(
-                  controller: targetController,
-                  style: TextStyle(color: _textWhite, fontFamily: 'Astral', fontSize: 15),
-                  cursorColor: _textWhite,
-                  keyboardType: _selectedBugMode == "number" ? TextInputType.phone : TextInputType.url,
-                  decoration: InputDecoration(
-                    hintText: _selectedBugMode == "number" 
-                        ? '62xxxxxxxxxx' 
-                        : 'https://chat.whatsapp.com/...',
-                    hintStyle: TextStyle(color: _textGrey.withOpacity(0.5), fontFamily: 'Astral'),
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(
-                        _selectedBugMode == "number" 
-                            ? Icons.language_rounded 
-                            : Icons.link_rounded,
-                        color: _textGrey,
-                        size: 20,
-                      ),
+              child: Row(
+                children: [
+                  _buildModeTab('NOMOR', _selectedBugMode == 'number'),
+                  const SizedBox(width: 4),
+                  _buildModeTab('GROUP', _selectedBugMode == 'group'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _glassColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _glassBorder, width: 1),
+              ),
+              child: TextField(
+                controller: targetController,
+                style: TextStyle(color: _textWhite, fontFamily: 'Astral', fontSize: 15),
+                cursorColor: _textWhite,
+                keyboardType: _selectedBugMode == "number" ? TextInputType.phone : TextInputType.url,
+                decoration: InputDecoration(
+                  hintText: _selectedBugMode == "number" 
+                      ? '62xxxxxxxxxx' 
+                      : 'https://chat.whatsapp.com/...',
+                  hintStyle: TextStyle(color: _textGrey.withOpacity(0.5), fontFamily: 'Astral'),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Icon(
+                      _selectedBugMode == "number" 
+                          ? Icons.language_rounded 
+                          : Icons.link_rounded,
+                      color: _textGrey,
+                      size: 20,
                     ),
-                    prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                   ),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          
-          Row(
-            children: [
-              Icon(Icons.bug_report, color: _textWhite, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'PILIH BUG',
-                style: TextStyle(
-                  color: _textWhite,
-                  fontFamily: 'Astral',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  letterSpacing: 2,
-                ),
+        ),
+        const SizedBox(height: 20),
+        
+        Row(
+          children: [
+            Icon(Icons.bug_report, color: _textWhite, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'PILIH BUG',
+              style: TextStyle(
+                color: _textWhite,
+                fontFamily: 'Astral',
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 2,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 130,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: widget.listBug.length,
-              physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, index) {
-                final bug = widget.listBug[index];
-                final bugId = bug['bug_id'] as String? ?? '$index';
-                final bugName = bug['bug_name'] as String? ?? 'BUG';
-                final isSelected = _selectedBugId == bugId;
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // ✅ 2. GUNAKAN displayedBugs DI SINI
+        SizedBox(
+          height: 130,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: displayedBugs.length, // <--- UBAH KE displayedBugs.length
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              final bug = displayedBugs[index]; // <--- UBAH KE displayedBugs[index]
+              final bugId = bug['bug_id'] as String? ?? '$index';
+              final bugName = bug['bug_name'] as String? ?? 'BUG';
+              final isSelected = _selectedBugId == bugId;
 
-                final offsetY = _bugOffsets[bugId] ?? 0.0;
+              final offsetY = _bugOffsets[bugId] ?? 0.0;
 
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: 12,
-                    left: index == 0 ? 0 : 0,
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      final controller = _bugAnimations[bugId];
-                      if (controller != null) {
-                        controller.forward(from: 0).then((_) {
-                          controller.reverse();
-                        });
-                      }
-                      
-                      setState(() {
-                        _selectedBugId = bugId;
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: 12,
+                  left: index == 0 ? 0 : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    final controller = _bugAnimations[bugId];
+                    if (controller != null) {
+                      controller.forward(from: 0).then((_) {
+                        controller.reverse();
                       });
-                    },
-                    child: Transform.translate(
-                      offset: Offset(0, -offsetY * 20),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            width: 200,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            decoration: BoxDecoration(
+                    }
+                    
+                    setState(() {
+                      _selectedBugId = bugId;
+                    });
+                  },
+                  child: Transform.translate(
+                    offset: Offset(0, -offsetY * 20),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          width: 200,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: isSelected 
+                                ? _accent.withOpacity(0.3)
+                                : _accent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
                               color: isSelected 
-                                  ? _accent.withOpacity(0.3)
-                                  : _accent.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected 
-                                    ? _accent 
-                                    : _accent.withOpacity(0.3),
-                                width: isSelected ? 2 : 1.2,
+                                  ? _accent 
+                                  : _accent.withOpacity(0.3),
+                              width: isSelected ? 2 : 1.2,
+                            ),
+                            boxShadow: isSelected ? [
+                              BoxShadow(
+                                color: _accent.withOpacity(0.3), 
+                                blurRadius: 25, 
+                                spreadRadius: 3
+                              )
+                            ] : [],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.shield_rounded,
+                                color: isSelected ? _textWhite : _textGrey,
+                                size: 28,
                               ),
-                              boxShadow: isSelected ? [
-                                BoxShadow(
-                                  color: _accent.withOpacity(0.3), 
-                                  blurRadius: 25, 
-                                  spreadRadius: 3
-                                )
-                              ] : [],
-                            ),
-                            child: Row(
-                              children: [
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      bugName,
+                                      style: TextStyle(
+                                        color: isSelected ? _textWhite : _textGrey,
+                                        fontFamily: 'Astral',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        letterSpacing: 0.5,
+                                      ),
+                                      overflow: TextOverflow.visible,
+                                      maxLines: 1,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      bugId.toLowerCase(),
+                                      style: TextStyle(
+                                        color: isSelected 
+                                            ? _textWhite.withOpacity(0.7) 
+                                            : _textGrey,
+                                        fontFamily: 'Astral',
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
                                 Icon(
-                                  Icons.shield_rounded,
-                                  color: isSelected ? _textWhite : _textGrey,
-                                  size: 28,
+                                  Icons.check_circle,
+                                  color: _green,
+                                  size: 22,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        bugName,
-                                        style: TextStyle(
-                                          color: isSelected ? _textWhite : _textGrey,
-                                          fontFamily: 'Astral',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                          letterSpacing: 0.5,
-                                        ),
-                                        overflow: TextOverflow.visible,
-                                        maxLines: 1,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        bugId.toLowerCase(),
-                                        style: TextStyle(
-                                          color: isSelected 
-                                              ? _textWhite.withOpacity(0.7) 
-                                              : _textGrey,
-                                          fontFamily: 'Astral',
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isSelected)
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: _green,
-                                    size: 22,
-                                  ),
-                              ],
-                            ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(widget.listBug.length, (i) {
-              final bug = widget.listBug[i];
-              final bugId = bug['bug_id'] as String? ?? '$i';
-              final isActive = _selectedBugId == bugId;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                width: isActive ? 18 : 6,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isActive ? _accent : _glassBorder,
-                  borderRadius: BorderRadius.circular(2),
                 ),
               );
-            }),
+            },
           ),
-        ],
-      ),
-    );
-  }
-
+        ),
+        const SizedBox(height: 10),
+        
+        // ✅ 3. INDIKATOR TITIK-TITIK JUGA MENGGUNAKAN displayedBugs
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(displayedBugs.length, (i) {
+            final bug = displayedBugs[i];
+            final bugId = bug['bug_id'] as String? ?? '$i';
+            final isActive = _selectedBugId == bugId;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              width: isActive ? 18 : 6,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isActive ? _accent : _glassBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            );
+          }),
+        ),
+      ],
+    ),
+  );
+}
+  
   Widget _buildModeTab(String label, bool isSelected) {
     return GestureDetector(
       onTap: () {
