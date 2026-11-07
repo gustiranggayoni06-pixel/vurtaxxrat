@@ -113,7 +113,7 @@ class ContactPage extends StatelessWidget {
                       label: "Telegram",
                       icon: FontAwesomeIcons.telegram,
                       color: Colors.blue,
-                      url: "https://t.me/ranzz_offczaxx_stur",
+                      url: "https://t.me/ranzz_offc",
                     ),
                     const SizedBox(height: 16),
                     _buildContactButton(
@@ -127,7 +127,7 @@ class ContactPage extends StatelessWidget {
                       label: "TikTok",
                       icon: FontAwesomeIcons.tiktok,
                       color: Colors.black,
-                      url: "https://www.tiktok.com/manuver.xx",
+                      url: "https://www.tiktok.com/r4nzz_offc",
                     ),
                     const SizedBox(height: 16),
                     _buildContactButton(
