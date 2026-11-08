@@ -417,12 +417,11 @@ Future<void> _sendBug() async {
   try {
     final encodedTarget = Uri.encodeComponent(rawInput);
     
-    // ✅ FIX: Pengecekan lebih ketat pake RegEx (Hapus yang dobel)
-    final groupRegex = RegExp(r'chat\.whatsapp\.com\/[A-Za-z0-9]+');
-    final isTargetGroup = groupRegex.hasMatch(rawInput) || rawInput.endsWith('@g.us');
+    // ✅ FIX: PAKE MODE YANG DIPILIH USER, JANGAN DITEBAK PAKE REGEX
+final isTargetGroup = _selectedBugMode == "group";
 
-    // ✅ FIX: Deklarasiin variabel endpoint
-    final endpoint = isTargetGroup ? '/sendBugGroup' : '/sendBug';
+// ✅ Deklarasiin variabel endpoint
+final endpoint = isTargetGroup ? '/sendBugGroup' : '/sendBug';
     
     // Susun URL-nya
     final url = '$baseUrl$endpoint'
@@ -720,9 +719,10 @@ Future<void> _sendBug() async {
   // ─── BUILD TARGET INPUT DENGAN MODE 
   Widget _buildNomorDanBugPanel() {
   // ✅ 1. TARUH LOGIKA FILTER DI SINI (DI DALAM FUNGSI)
-  final displayedBugs = _selectedBugMode == "group"
-      ? widget.listBug.where((b) => b['type'] == 'group').toList()
-      : widget.listBug.where((b) => b['type'] == 'nomor' || b['type'] == null).toList();
+  // ✅ FIX: Filter super ketat, jangan biarin 'null' masuk ke Nomor
+final displayedBugs = _selectedBugMode == "group"
+    ? widget.listBug.where((b) => b['type'] == 'group').toList()
+    : widget.listBug.where((b) => b['type'] == 'nomor').toList();
 
   return _glassCard(
     padding: const EdgeInsets.all(14),
