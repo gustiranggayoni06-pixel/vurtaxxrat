@@ -24,6 +24,7 @@ import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:image_picker/image_picker.dart';  // ✅ TAMBAHKAN INI
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:better_player_enhanced/better_player.dart';
 
 import 'api_config.dart';
 import 'admin_page.dart';
@@ -2741,7 +2742,7 @@ Widget _buildWelcomeCard() {
                     _AnimatedDot(color: kCyan, size: 5),
                     const SizedBox(width: 8),
                     const Text(
-                      'Developer By @zaxx_stur',
+                      'Developer By @ranzz_offc',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -4927,42 +4928,120 @@ class _StoryVideoWidget extends StatefulWidget {
 }
 
 class _StoryVideoWidgetState extends State<_StoryVideoWidget> {
-  VideoPlayerController? _videoController;
+  BetterPlayerController? _controller;
   bool _isLoading = true;
   bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
+    _activeVideoCount++;
+    debugPrint('🎬 Video player created. Active count: $_activeVideoCount');
+
+    // Kalau ada lebih dari 1, berarti ada leak — matikan yang lama
+    if (_activeVideoCount > 1) {
+      debugPrint('⚠️ Multiple video detected! Forcing cleanup...');
+    }
+
     _initPlayer();
   }
 
   Future<void> _initPlayer() async {
-    try {
-      _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.mediaUrl));
-      await _videoController!.initialize();
-      _videoController!.setLooping(false);
-      _videoController!.play();
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ Video init error: $e');
-      if (mounted) {
+  try {
+    final dataSource = BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      widget.mediaUrl,
+      videoFormat: BetterPlayerVideoFormat.other,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
+      },
+    );
+
+    final config = BetterPlayerConfiguration(
+      autoPlay: true,
+      looping: false,  // ✅ WAJIB false biar ga double
+      fit: BoxFit.cover,
+      aspectRatio: 16 / 9,
+      autoDispose: false,
+      allowedScreenSleep: false,
+      startAt: Duration.zero,
+      handleLifecycle: true,
+      controlsConfiguration: BetterPlayerControlsConfiguration(
+        showControls: true,
+        showControlsOnInitialize: false,
+        enablePlayPause: true,
+        enableProgressBar: true,
+        enableProgressText: true,
+        enableFullscreen: true,
+        enableMute: true,
+        enableSkips: true,
+        playerTheme: BetterPlayerTheme.custom,
+        controlBarColor: Colors.black54,
+        progressBarPlayedColor: const Color(0xFF42A5F5),
+        progressBarHandleColor: const Color(0xFF42A5F5),
+        progressBarBufferedColor: Colors.white24,
+        progressBarBackgroundColor: Colors.white12,
+        playIcon: Icons.play_arrow_rounded,
+        pauseIcon: Icons.pause_rounded,
+        muteIcon: Icons.volume_off_rounded,
+        unMuteIcon: Icons.volume_up_rounded,
+        fullscreenEnableIcon: Icons.fullscreen_rounded,
+        fullscreenDisableIcon: Icons.fullscreen_exit_rounded,
+      ),
+    );
+
+    // ✅ BetterPlayerController AUTO-INIT saat dibuat — TIDAK perlu .initialize()
+    _controller = BetterPlayerController(
+      config,
+      betterPlayerDataSource: dataSource,
+    );
+
+    // Listener event
+    _controller?.addEventsListener((event) {
+      if (!mounted) return;
+      if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
+        setState(() => _isLoading = false);
+      } else if (event.betterPlayerEventType == BetterPlayerEventType.exception) {
         setState(() {
           _isLoading = false;
           _hasError = true;
         });
       }
+    });
+
+    // Timeout fallback — kalau 5 detik ga ada event, set loading false
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && _isLoading) {
+        setState(() => _isLoading = false);
+      }
+    });
+
+  } catch (e) {
+    debugPrint('❌ Video init error: $e');
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
     }
   }
+}
 
   @override
   void dispose() {
-    _videoController?.pause();
-    _videoController?.dispose();
+    // ✅ HENTIKAN & DISPOSE PLAYER
+    try {
+      _controller?.pause();
+      _controller?.dispose(forceDispose: true);
+      _controller = null;
+    } catch (e) {
+      debugPrint('⚠️ Dispose error: $e');
+    }
+
+    _activeVideoCount--;
+    if (_activeVideoCount < 0) _activeVideoCount = 0;
+
+    debugPrint('🛑 Video disposed. Active count: $_activeVideoCount');
     super.dispose();
   }
 
@@ -4975,19 +5054,19 @@ class _StoryVideoWidgetState extends State<_StoryVideoWidget> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 60),
+              Icon(Icons.error_outline_rounded,
+                  color: Colors.redAccent, size: 60),
               SizedBox(height: 12),
-              Text('Gagal memuat video', style: TextStyle(color: Colors.white70, fontFamily: 'Astral', fontSize: 14)),
+              Text(
+                'Gagal memuat video',
+                style: TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'Astral',
+                    fontSize: 14),
+              ),
             ],
           ),
         ),
-      );
-    }
-
-    if (_isLoading || _videoController == null) {
-      return Container(
-        color: Colors.black,
-        child: const Center(child: CircularProgressIndicator(color: Color(0xFF42A5F5))),
       );
     }
 
@@ -4996,36 +5075,12 @@ class _StoryVideoWidgetState extends State<_StoryVideoWidget> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          AspectRatio(
-            aspectRatio: _videoController!.value.aspectRatio,
-            child: VideoPlayer(_videoController!),
-          ),
-          Positioned(
-            bottom: 80,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (_videoController!.value.isPlaying) {
-                    _videoController!.pause();
-                  } else {
-                    _videoController!.play();
-                  }
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  color: Colors.black54,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
+          if (_controller != null && !_isLoading)
+            BetterPlayer(controller: _controller!),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFF42A5F5)),
             ),
-          ),
         ],
       ),
     );
