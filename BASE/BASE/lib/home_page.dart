@@ -1293,67 +1293,85 @@ final displayedBugs = _selectedBugMode == "group"
           ),
           const SizedBox(height: 12),
 
-          if (_selectedSender == 'global' && _globalSenders.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _glassColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _glassBorder),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Icon(Icons.format_list_bulleted_rounded,
-                        color: _textGrey, size: 13),
-                    const SizedBox(width: 6),
-                    Text('${_globalSenders.length} sender aktif',
-                        style: TextStyle(
-                            color: _textGrey,
-                            fontSize: 11,
-                            fontFamily: 'Astral',
-                            fontWeight: FontWeight.w600)),
-                  ]),
-                  const SizedBox(height: 8),
-                  ...(_globalSenders.take(5).map((s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(children: [
-                          Container(
-                              width: 5,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _accent)),
-                          const SizedBox(width: 8),
-                          Text(s,
-                              style: TextStyle(
-                                  color: _textWhite,
-                                  fontSize: 11,
-                                  fontFamily: 'Astral')),
-                        ]),
-                      ))),
-                  if (_globalSenders.length > 5)
-                    Text('+ ${_globalSenders.length - 5} lainnya...',
-                        style: TextStyle(color: _textGrey, fontSize: 10, fontFamily: 'Astral')),
-                ],
-              ),
-            )
-          else
-            Row(
-              children: [
-                Icon(Icons.info_outline_rounded, color: _textGrey, size: 13),
-                const SizedBox(width: 6),
-                Text(
-                  'Sender global: unlimited (PEMULA)',
-                  style: TextStyle(
-                      color: _green,
-                      fontFamily: 'Astral',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
+          // ✅ FIX: CEK ROLE DULU SEBELUM NAMPILIN LIST SENDER GLOBAL
+if (widget.role.toLowerCase() == 'developer') 
+  if (_selectedSender == 'global' && _globalSenders.isNotEmpty)
+    Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _glassColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _glassBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.format_list_bulleted_rounded,
+                color: _textGrey, size: 13),
+            const SizedBox(width: 6),
+            Text('${_globalSenders.length} sender aktif',
+                style: TextStyle(
+                    color: _textGrey,
+                    fontSize: 11,
+                    fontFamily: 'Astral',
+                    fontWeight: FontWeight.w600)),
+          ]),
+          const SizedBox(height: 8),
+          ...(_globalSenders.take(5).map((s) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(children: [
+                  Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _accent)),
+                  const SizedBox(width: 8),
+                  Text(s,
+                      style: TextStyle(
+                          color: _textWhite,
+                          fontSize: 11,
+                          fontFamily: 'Astral')),
+                ]),
+              ))),
+          if (_globalSenders.length > 5)
+            Text('+ ${_globalSenders.length - 5} lainnya...',
+                style: TextStyle(color: _textGrey, fontSize: 10, fontFamily: 'Astral')),
+        ],
+      ),
+    )
+  else
+    Row(
+      children: [
+        Icon(Icons.info_outline_rounded, color: _textGrey, size: 13),
+        const SizedBox(width: 6),
+        Text(
+          'Sender global: unlimited (PEMULA)',
+          style: TextStyle(
+              color: _green,
+              fontFamily: 'Astral',
+              fontSize: 11,
+              fontWeight: FontWeight.w600),
+        ),
+      ],
+    )
+else
+  // TAMPILAN BUAT SELAIN DEVELOPER (MEREKA CUMA LIHAT TEKS INI)
+  Row(
+    children: [
+      Icon(Icons.info_outline_rounded, color: _textGrey, size: 13),
+      const SizedBox(width: 6),
+      Text(
+        'Sender global: unlimited (PEMULA)',
+        style: TextStyle(
+            color: _green,
+            fontFamily: 'Astral',
+            fontSize: 11,
+            fontWeight: FontWeight.w600),
+      ),
+    ],
+  ),
         ],
       ),
     );
