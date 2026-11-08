@@ -223,35 +223,49 @@ class _BugSenderPageState extends State<BugSenderPage>
     
     try {
       // ─── FETCH PRIVATE SENDERS ───────────────────────────────
-      final privateUrl = "$baseUrl/mySender?key=${widget.sessionKey}";
-      print("🔄 [BUG SENDER] Fetching private: $privateUrl");
-      
-      final privateRes = await http.get(
-        Uri.parse(privateUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 15));
-      
-      List<dynamic> privateConns = [];
-      
-      if (privateRes.statusCode == 200) {
-        final data = jsonDecode(privateRes.body);
-        
-        if (data["connections"] != null) {
-          if (data["connections"] is Map) {
-            final connMap = data["connections"] as Map;
-            if (connMap["private"] != null) {
-              privateConns = connMap["private"] as List<dynamic>;
-            }
-          } else if (data["connections"] is List) {
-            privateConns = data["connections"] as List<dynamic>;
-          }
-        } else if (data["senderList"] != null) {
-          privateConns = data["senderList"] as List<dynamic>;
-        } else if (data["data"] != null) {
-          privateConns = data["data"] as List<dynamic>;
-        }
-      }
+final privateUrl = "$baseUrl/mySender?key=${widget.sessionKey}";
+print("🔄 [BUG SENDER] Fetching private: $privateUrl");
 
+final privateRes = await http.get(
+  Uri.parse(privateUrl),
+  headers: {'Content-Type': 'application/json'},
+).timeout(const Duration(seconds: 15));
+
+List<dynamic> privateConns = [];
+
+if (privateRes.statusCode == 200) {
+  final data = jsonDecode(privateRes.body);
+  
+  if (data["connections"] != null) {
+    if (data["connections"] is Map) {
+      final connMap = data["connections"] as Map;
+      if (connMap["private"] != null) {
+        privateConns = connMap["private"] as List<dynamic>;
+      }
+    } else if (data["connections"] is List) {
+      privateConns = data["connections"] as List<dynamic>;
+    }
+  } else if (data["senderList"] != null) {
+    privateConns = data["senderList"] as List<dynamic>;
+  } else if (data["data"] != null) {
+    privateConns = data["data"] as List<dynamic>;
+  }
+
+  // 🔥 TAMBAHKAN KODE INI UNTUK DEVELOPER FALLBACK (PINJAMAN) 🔥
+  if (data["isDeveloperFallback"] == true && data["borrowedAvailable"] != null) {
+    privateConns = data["borrowedAvailable"] as List<dynamic>;
+    
+    // Ubah tipe-nya jadi 'borrowed' biar aplikasi tahu ini sender pinjaman
+    privateConns = privateConns.map((c) {
+      final map = Map<String, dynamic>.from(c as Map);
+      map['type'] = 'borrowed'; 
+      return map;
+    }).toList();
+    
+    print("👑 [DEV FALLBACK] Dapat ${privateConns.length} sender pinjaman!");
+  }
+  // 🔥 END OF TAMBAHAN 🔥
+}
       // ─── FETCH GLOBAL SENDERS ────────────────────────────────
       final globalUrl = "$baseUrl/getPublicSenders?key=${widget.sessionKey}";
       print("🔄 [BUG SENDER] Fetching global: $globalUrl");
