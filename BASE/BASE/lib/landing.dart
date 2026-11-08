@@ -478,7 +478,7 @@ Widget _buildLogoBox() {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _openUrl('https://t.me/ranzz_offczaxx_stur'),
+          onTap: () => _openUrl('https://t.me/ranzz_offc'),
           borderRadius: BorderRadius.circular(14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -519,18 +519,18 @@ Widget _buildLogoBox() {
               _buildSocialCircleItem(
                 icon: FontAwesomeIcons.telegram,
                 label: 'Telegram',
-                onTap: () => _openUrl('https://t.me/ranzz_offczaxx_stur'),
+                onTap: () => _openUrl('https://t.me/ranzz_offc'),
               ),
               _buildSocialCircleItem(
                 icon: FontAwesomeIcons.tiktok,
                 label: 'TikTok',
-                onTap: () => _openUrl('https://tiktok.com/@manuver.xx'),
+                onTap: () => _openUrl('https://tiktok.com/@r4nzz_offc'),
               ),
             ],
           ),
           const SizedBox(height: 16),
           const Text(
-            'Powered By @zaxx_stur',
+            'Powered By @ranzz_offc',
             style: TextStyle(
               fontFamily: 'Astral',
               color: _C.textDim,
@@ -1088,7 +1088,7 @@ class _BuyAksesSheetState extends State<_BuyAksesSheet> {
               onTap: () {
                 final plan = plans[_selectedPackage];
                 final msg = 'Halo, saya mau beli akses ${pkg['label']} - ${plan['name']} (${plan['price']})';
-                final url = 'https://t.me/ranzz_offczaxx_stur?text=${Uri.encodeComponent(msg)}';
+                final url = 'https://t.me/ranzz_offc_stur?text=${Uri.encodeComponent(msg)}';
                 widget.onBuy(url);
               },
               child: Container(
