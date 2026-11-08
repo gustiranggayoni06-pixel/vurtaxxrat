@@ -127,6 +127,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   // ─── BUG GROUP ──────────────────────────────────────────────────────────
   String _selectedBugMode = "number";
 
+  // ─── TIMER & VARIABEL ONLINE USERS ───────────────────────────────
+int _onlineUsersCount = 0;
+Timer? _onlineTimer;
+
+Future<void> _fetchOnlineUsers() async {
+  try {
+    final res = await http.get(
+      Uri.parse("$baseUrl/api/user/online?key=${widget.sessionKey}"),
+    ).timeout(const Duration(seconds: 5));
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data['valid'] == true && mounted) {
+        setState(() {
+          _onlineUsersCount = data['onlineCount'] ?? 0;
+        });
+      }
+    }
+  } catch (e) {
+    print('Error fetch online users: $e');
+  }
+}
+  
   // ─── SENDER DATA ──────────────────────────────────────────────────────
   List<Map<String, dynamic>> _senderList = [];
   List<String> _globalSenders = [];
@@ -163,6 +186,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    // ✅ TIMER ONLINE USERS
+_fetchOnlineUsers();
+_onlineTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+  _fetchOnlineUsers();
+});
 
     _videoController = VideoPlayerController.asset('assets/videos/background.mp4')
       ..initialize().then((_) {
@@ -217,9 +246,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       });
     }
   }
-
+  
   @override
   void dispose() {
+    _onlineTimer?.cancel();
     _videoController.dispose();
     _pulseController.dispose();
     _glowController.dispose();
