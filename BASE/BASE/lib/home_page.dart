@@ -1027,304 +1027,287 @@ final displayedBugs = _selectedBugMode == "group"
   }
 
   Widget _buildSenderPanel() {
-    return _glassCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.swap_horiz_rounded, color: _textWhite, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                'PILIH SENDER',
-                style: TextStyle(
-                  color: _textWhite,
-                  fontFamily: 'Astral',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                ),
+  return _glassCard(
+    padding: const EdgeInsets.all(14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ─── HEADER (JUDUL & REFRESH) ──────────────────────────────
+        Row(
+          children: [
+            Icon(Icons.swap_horiz_rounded, color: _textWhite, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              'PILIH SENDER',
+              style: TextStyle(
+                color: _textWhite,
+                fontFamily: 'Astral',
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 1,
               ),
-              const Spacer(),
-              GestureDetector(
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => _fetchSenderData(),
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: _glassColor,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: _glassBorder),
+                ),
+                child: (_isLoadingSenders || _loadingSender)
+                    ? Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 1.5, color: _textWhite),
+                      )
+                    : Icon(Icons.refresh_rounded, color: _textGrey, size: 14),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _glassBorderActive),
+                color: _glassColor,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: _textWhite,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_privateSenderCount + _globalSenderCount} sender',
+                    style: TextStyle(
+                        color: _textWhite,
+                        fontFamily: 'Astral',
+                        fontSize: 9),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 12),
+
+        // ─── TOMBOL PRIBADI & GLOBAL ──────────────────────────────
+        Row(
+          children: [
+            // CARD PRIBADI
+            Expanded(
+              child: GestureDetector(
                 onTap: () {
-                  _fetchSenderData();
+                  setState(() {
+                    _selectedSender = 'private';
+                    _responseMessage = null;
+                  });
                 },
-                child: Container(
-                  width: 26,
-                  height: 26,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 120,
                   decoration: BoxDecoration(
                     color: _glassColor,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: _glassBorder),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: _selectedSender == 'private'
+                          ? _glassBorderActive
+                          : _glassBorder,
+                      width: 1.5,
+                    ),
+                    boxShadow: _selectedSender == 'private'
+                        ? [
+                            BoxShadow(
+                              color: Colors.white.withOpacity(0.05),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            )
+                          ]
+                        : [],
                   ),
-                  child: (_isLoadingSenders || _loadingSender)
-                      ? Padding(
-                          padding: const EdgeInsets.all(5),
-                          child: CircularProgressIndicator(
-                              strokeWidth: 1.5, color: _textWhite),
-                        )
-                      : Icon(Icons.refresh_rounded, color: _textGrey, size: 14),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _glassBorderActive),
-                  color: _glassColor,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: _textWhite,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _loadingSender
-                          ? '-- sender online'
-                          : '${_privateSenderCount + _globalSenderCount} sender online',
-                      style: TextStyle(
-                          color: _textWhite,
-                          fontFamily: 'Astral',
-                          fontSize: 9),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    // ✅ FIX: Reset response message saat ganti sender
-                    setState(() {
-                      _selectedSender = 'private';
-                      _responseMessage = null;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: _glassColor,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.person_rounded,
                         color: _selectedSender == 'private'
-                            ? _glassBorderActive
-                            : _glassBorder,
-                        width: 1.5,
+                            ? _textWhite
+                            : _textGrey,
+                        size: 30,
                       ),
-                      boxShadow: _selectedSender == 'private'
-                          ? [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.05),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              )
-                            ]
-                          : [],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.person_rounded,
+                      const SizedBox(height: 6),
+                      Text(
+                        'Pribadi',
+                        style: TextStyle(
                           color: _selectedSender == 'private'
                               ? _textWhite
                               : _textGrey,
-                          size: 30,
+                          fontFamily: 'Astral',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Pribadi',
-                          style: TextStyle(
-                            color: _selectedSender == 'private'
-                                ? _textWhite
-                                : _textGrey,
-                            fontFamily: 'Astral',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        _privateSenderCount == 0
-                            ? Text(
-                                '✕ Kosong',
-                                style: TextStyle(
-                                  color: _selectedSender == 'private'
-                                      ? _textGrey
-                                      : _red,
-                                  fontFamily: 'Astral',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
-                                ),
-                              )
-                            : Text(
-                                '$_privateSenderCount sender',
-                                style: TextStyle(
-                                  color: _selectedSender == 'private'
-                                      ? _textWhite
-                                      : _textWhite,
-                                  fontFamily: 'Astral',
-                                  fontSize: 10,
-                                ),
+                      ),
+                      const SizedBox(height: 4),
+                      _privateSenderCount == 0
+                          ? Text(
+                              '✕ Kosong',
+                              style: TextStyle(
+                                color: _selectedSender == 'private'
+                                    ? _textGrey
+                                    : _red,
+                                fontFamily: 'Astral',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
                               ),
-                      ],
-                    ),
+                            )
+                          : Text(
+                              '$_privateSenderCount sender',
+                              style: TextStyle(
+                                color: _selectedSender == 'private'
+                                    ? _textWhite
+                                    : _textWhite,
+                                fontFamily: 'Astral',
+                                fontSize: 10,
+                              ),
+                            ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+            ),
+            const SizedBox(width: 8),
 
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (!canAccessGlobalSender) {
-                      _showAlert('❌ Akses Ditolak',
-                          'Sender Global hanya untuk Developer, Founder, Kingz, High Owner, Owner, TK, Admin & VIP!');
-                      return;
-                    }
-                    // ✅ FIX: Reset response message saat ganti sender
-                    setState(() {
-                      _selectedSender = 'global';
-                      _responseMessage = null;
-                    });
-                    _fetchGlobalSenders();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: _glassColor,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: _selectedSender == 'global'
-                            ? _glassBorderActive
-                            : _glassBorder,
-                        width: 1.5,
-                      ),
-                      boxShadow: _selectedSender == 'global'
-                          ? [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.05),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              )
-                            ]
-                          : [],
+            // CARD GLOBAL
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  if (!canAccessGlobalSender) {
+                    _showAlert('❌ Akses Ditolak',
+                        'Sender Global hanya untuk Developer, Founder, Kingz, High Owner, Owner, TK, Admin & VIP!');
+                    return;
+                  }
+                  setState(() {
+                    _selectedSender = 'global';
+                    _responseMessage = null;
+                  });
+                  _fetchGlobalSenders();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: _glassColor,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: _selectedSender == 'global'
+                          ? _glassBorderActive
+                          : _glassBorder,
+                      width: 1.5,
                     ),
-                    child: Stack(
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(width: double.infinity),
-                            Icon(
-                              Icons.public_rounded,
+                    boxShadow: _selectedSender == 'global'
+                        ? [
+                            BoxShadow(
+                              color: Colors.white.withOpacity(0.05),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            )
+                          ]
+                        : [],
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(width: double.infinity),
+                          Icon(
+                            Icons.public_rounded,
+                            color: _selectedSender == 'global'
+                                ? _textWhite
+                                : _textGrey,
+                            size: 30,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Global',
+                            style: TextStyle(
                               color: _selectedSender == 'global'
                                   ? _textWhite
                                   : _textGrey,
-                              size: 30,
+                              fontFamily: 'Astral',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Global',
-                              style: TextStyle(
-                                color: _selectedSender == 'global'
-                                    ? _textWhite
-                                    : _textGrey,
-                                fontFamily: 'Astral',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            _globalSenderCount == 0
-                                ? Text(
-                                    '✕ Kosong',
-                                    style: TextStyle(
-                                      color: _selectedSender == 'global'
-                                          ? _textGrey
-                                          : _red,
-                                      fontFamily: 'Astral',
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                    ),
-                                  )
-                                : Text(
-                                    '$_globalSenderCount sender',
-                                    style: TextStyle(
-                                      color: _selectedSender == 'global'
-                                          ? _textWhite
-                                          : _textWhite,
-                                      fontFamily: 'Astral',
-                                      fontSize: 10,
-                                    ),
+                          ),
+                          const SizedBox(height: 4),
+                          _globalSenderCount == 0
+                              ? Text(
+                                  '✕ Kosong',
+                                  style: TextStyle(
+                                    color: _selectedSender == 'global'
+                                        ? _textGrey
+                                        : _red,
+                                    fontFamily: 'Astral',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
                                   ),
-                          ],
-                        ),
-                        if (!canAccessGlobalSender)
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: Container(
-                              width: 18,
-                              height: 18,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _amber,
-                                border: Border.all(
-                                    color: Colors.black26, width: 1.2),
-                              ),
-                              child: const Icon(Icons.lock_rounded,
-                                  color: Colors.white, size: 10),
-                            ),
-                          ),
-                        if (_selectedSender == 'global' && _globalSenderCount > 0)
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: _textWhite,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'ON',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Astral',
+                                )
+                              : Text(
+                                  '$_globalSenderCount sender',
+                                  style: TextStyle(
+                                    color: _selectedSender == 'global'
+                                        ? _textWhite
+                                        : _textWhite,
+                                    fontFamily: 'Astral',
+                                    fontSize: 10,
+                                  ),
                                 ),
+                        ],
+                      ),
+                      // Badge ON
+                      if (_selectedSender == 'global' && _globalSenderCount > 0)
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _textWhite,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'ON',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Astral',
                               ),
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
 
-          // ✅ FIX: CEK ROLE DULU SEBELUM NAMPILIN LIST SENDER GLOBAL
-        // ✅ FIX TOTAL: LOGIKA PENAMPILAN SENDER
+        // ─── INFO SENDER DI BAWAH (KHUSUS GLOBAL) ─────────────────
         if (_selectedSender == 'global') ...[
           if (_globalSenders.isNotEmpty)
             Container(
@@ -1381,31 +1364,15 @@ final displayedBugs = _selectedBugMode == "group"
                 Icon(Icons.info_outline_rounded, color: _textGrey, size: 13),
                 const SizedBox(width: 6),
                 Text(
-                  'Sender global: unlimited (PEMULA)',
+                  'Belum ada sender global aktif',
                   style: TextStyle(
-                      color: _green,
+                      color: _red,
                       fontFamily: 'Astral',
                       fontSize: 11,
                       fontWeight: FontWeight.w600),
                 ),
               ],
             ),
-        ] else if (_selectedSender == 'private') ...[
-          // ✅ TAMPILAN SAAT PILIH PRIBADI (TIDAK ADA TEKS NYASAR)
-          Row(
-            children: [
-              Icon(Icons.info_outline_rounded, color: _textGrey, size: 13),
-              const SizedBox(width: 6),
-              Text(
-                'Sender pribadi siap digunakan',
-                style: TextStyle(
-                    color: _green,
-                    fontFamily: 'Astral',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
         ],
       ],
     ),

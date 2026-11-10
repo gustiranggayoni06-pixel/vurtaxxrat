@@ -213,132 +213,110 @@ class _BugSenderPageState extends State<BugSenderPage>
   }
 
   // ─── API ────────────────────────────────────────────────────────────────────
-  Future<void> _fetchSenders({bool silent = false}) async {
-    if (!silent) {
-      setState(() { 
-        isLoading = true; 
-        errorMessage = null; 
-      });
-    }
-    
-    try {
-      // ─── FETCH PRIVATE SENDERS ───────────────────────────────
-final privateUrl = "$baseUrl/mySender?key=${widget.sessionKey}";
-print("🔄 [BUG SENDER] Fetching private: $privateUrl");
-
-final privateRes = await http.get(
-  Uri.parse(privateUrl),
-  headers: {'Content-Type': 'application/json'},
-).timeout(const Duration(seconds: 15));
-
-List<dynamic> privateConns = [];
-
-if (privateRes.statusCode == 200) {
-  final data = jsonDecode(privateRes.body);
-  
-  if (data["connections"] != null) {
-    if (data["connections"] is Map) {
-      final connMap = data["connections"] as Map;
-      if (connMap["private"] != null) {
-        privateConns = connMap["private"] as List<dynamic>;
-      }
-    } else if (data["connections"] is List) {
-      privateConns = data["connections"] as List<dynamic>;
-    }
-  } else if (data["senderList"] != null) {
-    privateConns = data["senderList"] as List<dynamic>;
-  } else if (data["data"] != null) {
-    privateConns = data["data"] as List<dynamic>;
+  // Ganti method _fetchSenders di dalam _BugSenderPageState
+Future<void> _fetchSenders({bool silent = false}) async {
+  if (!silent) {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
   }
 
-  // 🔥 TAMBAHKAN KODE INI UNTUK DEVELOPER FALLBACK (PINJAMAN) 🔥
-  if (data["isDeveloperFallback"] == true && data["borrowedAvailable"] != null) {
-    privateConns = data["borrowedAvailable"] as List<dynamic>;
-    
-    // Ubah tipe-nya jadi 'borrowed' biar aplikasi tahu ini sender pinjaman
+  try {
+    // FETCH PRIVATE (termasuk DEV FALLBACK)
+    final privateRes = await http.get(
+      Uri.parse("$baseUrl/mySender?key=${widget.sessionKey}"),
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(const Duration(seconds: 15));
+
+    List<dynamic> privateConns = [];
+    if (privateRes.statusCode == 200) {
+      final data = jsonDecode(privateRes.body);
+      if (data["connections"] != null) {
+        if (data["connections"] is Map) {
+          final connMap = data["connections"] as Map;
+          if (connMap["private"] != null) {
+            privateConns = connMap["private"] as List<dynamic>;
+          }
+        } else if (data["connections"] is List) {
+          privateConns = data["connections"] as List<dynamic>;
+        }
+      } else if (data["senderList"] != null) {
+        privateConns = data["senderList"] as List<dynamic>;
+      } else if (data["data"] != null) {
+        privateConns = data["data"] as List<dynamic>;
+      }
+
+      // DEV FALLBACK
+      if (data["isDeveloperFallback"] == true &&
+          data["borrowedAvailable"] != null) {
+        privateConns = data["borrowedAvailable"] as List<dynamic>;
+        privateConns = privateConns.map((c) {
+          final map = Map<String, dynamic>.from(c as Map);
+          map['type'] = 'borrowed';
+          return map;
+        }).toList();
+      }
+    }
+
+    // FETCH GLOBAL — total semua sender aktif di semua akun (tanpa nomor)
+    final globalRes = await http.get(
+      Uri.parse("$baseUrl/getPublicSenders?key=${widget.sessionKey}"),
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(const Duration(seconds: 15));
+
+    List<dynamic> globalConns = [];
+    if (globalRes.statusCode == 200) {
+      final data = jsonDecode(globalRes.body);
+      if (data['valid'] == true && data['senders'] != null) {
+        final senders = List<dynamic>.from(data['senders']);
+        globalConns = senders.map((s) {
+          final session = s['session']?.toString() ??
+              s['number']?.toString() ??
+              s['sessionName']?.toString() ??
+              '';
+          final isActive = s['isActive'] == true;
+          return {
+            'sessionName': session,
+            'number': session,
+            'id': session,
+            'status': isActive ? 'connected' : 'disconnected',
+            'isPublic': true,
+            'type': 'global',
+          };
+        }).where((s) => s['sessionName'].toString().isNotEmpty).toList();
+      }
+    }
+
+    // Tandai type private
     privateConns = privateConns.map((c) {
       final map = Map<String, dynamic>.from(c as Map);
-      map['type'] = 'borrowed'; 
+      map['type'] = map['type'] ?? 'private';
       return map;
     }).toList();
-    
-    print("👑 [DEV FALLBACK] Dapat ${privateConns.length} sender pinjaman!");
-  }
-  // 🔥 END OF TAMBAHAN 🔥
-}
-      // ─── FETCH GLOBAL SENDERS ────────────────────────────────
-      final globalUrl = "$baseUrl/getPublicSenders?key=${widget.sessionKey}";
-      print("🔄 [BUG SENDER] Fetching global: $globalUrl");
-      
-      final globalRes = await http.get(
-        Uri.parse(globalUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 15));
-      
-      List<dynamic> globalConns = [];
-      
-      if (globalRes.statusCode == 200) {
-        final data = jsonDecode(globalRes.body);
-        
-        if (data['valid'] == true && data['senders'] != null) {
-          final senders = List<dynamic>.from(data['senders']);
-          
-          // ✅ FIX: Parse field 'session' dari server
-          globalConns = senders.map((s) {
-            final session = s['session']?.toString() 
-                         ?? s['number']?.toString() 
-                         ?? s['sessionName']?.toString() 
-                         ?? '';
-            final isActive = s['isActive'] == true;
-            final status = s['status']?.toString() ?? (isActive ? 'connected' : 'disconnected');
-            
-            return {
-              'sessionName': session,
-              'number': session,
-              'id': session,
-              'status': status,
-              'isPublic': true,
-              'type': 'global',
-            };
-          }).where((s) => s['sessionName'].toString().isNotEmpty).toList();
-        }
-      }
 
-      // ✅ FIX: Tandai private sender dengan type='private'
-      privateConns = privateConns.map((c) {
-        final map = Map<String, dynamic>.from(c as Map);
-        map['type'] = 'private';
-        return map;
-      }).toList();
-
-      print("📡 [BUG SENDER] Private: ${privateConns.length}, Global: ${globalConns.length}");
-
-      if (mounted) {
-        setState(() {
-          privateSenderList = privateConns;
-          globalSenderList = globalConns;
-          senderList = [...privateConns, ...globalConns];
-          errorMessage = null;
-        });
-        _listCtrl.forward(from: 0);
-      }
-      
-    } catch (e) {
-      print("❌ [BUG SENDER] Exception: $e");
-      if (mounted && !silent) {
-        setState(() {
-          errorMessage = "Connection failed: ${e.toString()}";
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() { 
-          isLoading = false; 
-          isRefreshing = false; 
-        });
-      }
+    if (mounted) {
+      setState(() {
+        privateSenderList = privateConns;
+        globalSenderList = globalConns;
+        senderList = [...privateConns, ...globalConns];
+        errorMessage = null;
+      });
+      _listCtrl.forward(from: 0);
+    }
+  } catch (e) {
+    if (mounted && !silent) {
+      setState(() => errorMessage = "Connection failed: $e");
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+        isRefreshing = false;
+      });
     }
   }
+}
 
   Future<void> _refreshSenders() async {
     setState(() => isRefreshing = true);
@@ -773,119 +751,88 @@ if (privateRes.statusCode == 200) {
 
   // ✅ FIX: Tab selector Private vs Global
   Widget _buildTabSelector() {
-    final privateCount = privateSenderList.length;
-    final globalCount = globalSenderList.length;
-    
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: _C.card,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _C.border),
-        boxShadow: [
-          BoxShadow(
-            color: _C.blue.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // ─── TAB PRIVATE ───────────────────
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _currentTab = 'private'),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(vertical: 11),
-                decoration: BoxDecoration(
-                  gradient: _currentTab == 'private' ? _C.btnGrad : null,
-                  color: _currentTab == 'private' ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: _currentTab == 'private'
-                      ? [
-                          BoxShadow(
-                            color: _C.blueMid.withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person_rounded,
-                      color: _currentTab == 'private' ? Colors.white : _C.textSub,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Private ($privateCount)',
+  final privateCount = privateSenderList.length;
+  final globalCount = globalSenderList.length;
+
+  return Container(
+    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+    padding: const EdgeInsets.all(4),
+    decoration: BoxDecoration(
+      color: _C.card,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: _C.border),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() => _currentTab = 'private'),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              decoration: BoxDecoration(
+                gradient: _currentTab == 'private' ? _C.btnGrad : null,
+                color: _currentTab == 'private' ? null : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_rounded,
+                      color:
+                          _currentTab == 'private' ? Colors.white : _C.textSub,
+                      size: 16),
+                  const SizedBox(width: 6),
+                  Text('Private ($privateCount)',
                       style: TextStyle(
-                        color: _currentTab == 'private' ? Colors.white : _C.textSub,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Astral',
-                      ),
-                    ),
-                  ],
-                ),
+                          color: _currentTab == 'private'
+                              ? Colors.white
+                              : _C.textSub,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Astral')),
+                ],
               ),
             ),
           ),
-          const SizedBox(width: 4),
-          // ─── TAB GLOBAL ────────────────────
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _currentTab = 'global'),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(vertical: 11),
-                decoration: BoxDecoration(
-                  gradient: _currentTab == 'global' ? _C.globalGrad : null,
-                  color: _currentTab == 'global' ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: _currentTab == 'global'
-                      ? [
-                          BoxShadow(
-                            color: _C.amber.withOpacity(0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.public_rounded,
-                      color: _currentTab == 'global' ? Colors.white : _C.textSub,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Global ($globalCount)',
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() => _currentTab = 'global'),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              decoration: BoxDecoration(
+                gradient: _currentTab == 'global' ? _C.globalGrad : null,
+                color: _currentTab == 'global' ? null : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.public_rounded,
+                      color:
+                          _currentTab == 'global' ? Colors.white : _C.textSub,
+                      size: 16),
+                  const SizedBox(width: 6),
+                  Text('Global ($globalCount)',
                       style: TextStyle(
-                        color: _currentTab == 'global' ? Colors.white : _C.textSub,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Astral',
-                      ),
-                    ),
-                  ],
-                ),
+                          color: _currentTab == 'global'
+                              ? Colors.white
+                              : _C.textSub,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Astral')),
+                ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // ─── Build ────────────────────────────────────────────────────────────────
   @override
@@ -953,57 +900,56 @@ if (privateRes.statusCode == 200) {
   }
 
   Widget _buildBody() {
-    if (isLoading && senderList.isEmpty) return _buildLoading();
-    if (errorMessage != null && senderList.isEmpty) return _buildErrorState();
-    
-    // ✅ FIX: Ambil list sesuai tab
-    final currentList = _currentTab == 'private' ? privateSenderList : globalSenderList;
+  if (isLoading && senderList.isEmpty) return _buildLoading();
+  if (errorMessage != null && senderList.isEmpty) return _buildErrorState();
 
-    return RefreshIndicator(
-      color: _C.blueMid,
-      backgroundColor: _C.card,
-      onRefresh: _refreshSenders,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          // ─── TAB SELECTOR ────────────────────────
-          SliverToBoxAdapter(
-            child: _buildTabSelector(),
+  final currentList =
+      _currentTab == 'private' ? privateSenderList : globalSenderList;
+
+  return RefreshIndicator(
+    color: _C.blueMid,
+    backgroundColor: _C.card,
+    onRefresh: _refreshSenders,
+    child: CustomScrollView(
+      physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics()),
+      slivers: [
+        // ─── TAB SELECTOR ────────────────────────
+        SliverToBoxAdapter(child: _buildTabSelector()),
+
+        // ─── STAT STRIP ──────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: _StatStrip(
+              total: currentList.length,
+              role: widget.role,
+              isGlobal: _currentTab == 'global',
+            ),
           ),
-          
-          // ─── STAT STRIP ──────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: _StatStrip(
-                total: currentList.length,
-                role: widget.role,
-                isGlobal: _currentTab == 'global',
+        ),
+
+        // ─── LIST SENDER ─────────────────────────
+        if (currentList.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildEmptyState(),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (ctx, i) => _buildSenderCard(
+                    Map<String, dynamic>.from(currentList[i]), i),
+                childCount: currentList.length,
               ),
             ),
           ),
-          
-          // ─── LIST SENDER ─────────────────────────
-          if (currentList.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: _buildEmptyState(),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => _buildSenderCard(
-                      Map<String, dynamic>.from(currentList[i]), i),
-                  childCount: currentList.length,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   Widget _buildFAB() {
     return AnimatedBuilder(

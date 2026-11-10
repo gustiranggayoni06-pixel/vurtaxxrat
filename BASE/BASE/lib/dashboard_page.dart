@@ -2763,31 +2763,29 @@ Widget _buildWelcomeCard() {
 
               // ─── STATS ROW ────────────────────────────
               Row(
-                children: [
-                  _buildCircleStatItem(
-                    icon: Icons.people_alt_rounded,
-                    value: '$onlineUsers',
-                    label: 'Online Users',
-                    color: kGreen,
-                  ),
-                  _buildStatDivider(),
-                  _buildCircleStatItem(
-                    icon: Icons.link_rounded,
-                    value: '$activeConns',
-                    label: 'Active Connections',
-                    color: kBlue,
-                  ),
-                  _buildStatDivider(),
-                  _buildCircleStatItem(
-                    icon: Icons.calendar_month_rounded,
-                    value: expiredDate.length > 10
-                        ? expiredDate.substring(0, 10)
-                        : expiredDate,
-                    label: 'Expiration',
-                    color: kOrange,
-                  ),
-                ],
-              ),
+  children: [
+    _buildCircleStatItem(
+      icon: Icons.people_alt_rounded,
+      value: '$onlineUsers',
+      label: 'Online Users',
+      color: kGreen,
+    ),
+    _buildStatDivider(),
+    _buildCircleStatItem(
+      icon: Icons.person_rounded,
+      value: '$_privateSenderCount',
+      label: 'Private Sender',
+      color: kBlue,
+    ),
+    _buildStatDivider(),
+    _buildCircleStatItem(
+      icon: Icons.public_rounded,
+      value: '$_globalSenderCount',
+      label: 'Global Sender',
+      color: kOrange,
+    ),
+  ],
+),
               const SizedBox(height: 12),
 
               // ─── LIVE BADGE ──────────────────────────
