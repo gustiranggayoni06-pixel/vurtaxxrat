@@ -25,6 +25,7 @@ import 'package:image_picker/image_picker.dart';  // ✅ TAMBAHKAN INI
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:better_player_enhanced/better_player.dart';
+import 'dart:async';
 
 import 'api_config.dart';
 import 'admin_page.dart';
@@ -299,12 +300,37 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   File? _profileImage;
   VideoPlayerController? _menuVideoCtrl;
   
-  int _onlineCount = 0;
-  int _navIndex = 0;
-  int onlineUsers = 0;
-  int activeConns = 0;
-  int _carouselCurrentIndex = 0;
+  // ─── DEVICE INFO ─────────────────────────────────────────────────
+int _onlineCount = 0;
+int _navIndex = 0;
+int onlineUsers = 0;
+int activeConns = 0;
+int _carouselCurrentIndex = 0;
+// ✅ TAMBAHKAN INI TUAN:
+int _privateSenderCount = 0;
+int _globalSenderCount = 0;
+Timer? _senderStatsTimer; 
 
+  // ✅ TAMBAHKAN FUNGSI INI JUGA:
+Future<void> _fetchSenderStats() async {
+  try {
+    final res = await http.get(
+      Uri.parse('$baseUrl/getSenderStats?key=$sessionKey'),
+    ).timeout(const Duration(seconds: 10));
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data['valid'] == true && mounted) {
+        setState(() {
+          _privateSenderCount = data['private'] ?? 0;
+          _globalSenderCount = data['global'] ?? 0;
+        });
+      }
+    }
+  } catch (e) {
+    debugPrint('❌ Fetch sender stats error: $e');
+  }
+}
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
   late AnimationController _pulseCtrl;
