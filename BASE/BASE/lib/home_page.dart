@@ -431,15 +431,8 @@ Future<void> _sendBug() async {
   }
 
   // Developer = UNLIMITED, skip validasi kosong
+// ✅ FIX UNLIMITED: Cukup SATU variabel isDev saja
 final isDev = widget.role.toLowerCase() == 'developer';
-
-if (_selectedSender == 'private' && _privateSenderCount == 0 && !isDev) {
-  _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
-  return;
-}
-
-  // ✅ FIX UNLIMITED: Developer tidak pernah kena validasi kosong
-bool isDev = widget.role.toLowerCase() == 'developer';
 
 if (_selectedSender == 'private' && _privateSenderCount == 0 && !isDev) {
   _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
