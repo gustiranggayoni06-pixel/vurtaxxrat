@@ -239,15 +239,42 @@ class _BugSenderPageState extends State<BugSenderPage>
           privateConns = data["data"] as List<dynamic>;
         }
 
-        if (data["isDeveloperFallback"] == true &&
-            data["borrowedAvailable"] != null) {
-          privateConns = data["borrowedAvailable"] as List<dynamic>;
-          privateConns = privateConns.map((c) {
-            final map = Map<String, dynamic>.from(c as Map);
-            map['type'] = 'borrowed';
-            return map;
-          }).toList();
-        }
+        // Handle developer fallback dari backend
+if (data["isDeveloperFallback"] == true &&
+    data["borrowedAvailable"] != null) {
+  privateConns = data["borrowedAvailable"] as List<dynamic>;
+  privateConns = privateConns.map((c) {
+    final map = Map<String, dynamic>.from(c as Map);
+    map['type'] = 'private';  // ✅ Paksa jadi private biar bisa dipilih
+    map['status'] = 'connected';
+    return map;
+  }).toList();
+}
+
+// ✅ FALLBACK: kalau developer dan private masih kosong, 
+// ambil dari global as private
+if (widget.role.toLowerCase() == 'developer' && privateConns.isEmpty) {
+  final globalRes2 = await http.get(
+    Uri.parse("$baseUrl/getPublicSenders?key=${widget.sessionKey}"),
+  ).timeout(const Duration(seconds: 10));
+  
+  if (globalRes2.statusCode == 200) {
+    final gData = jsonDecode(globalRes2.body);
+    if (gData['valid'] == true && gData['senders'] != null) {
+      privateConns = (gData['senders'] as List).map((s) {
+        final session = s['session']?.toString() ?? '';
+        return {
+          'sessionName': session,
+          'number': session,
+          'type': 'private',
+          'status': 'connected',
+          'isPublic': true,
+          'borrowed': true,
+        };
+      }).where((s) => (s['sessionName'] as String).isNotEmpty).toList();
+    }
+  }
+}
       }
 
       final globalRes = await http.get(
@@ -624,12 +651,52 @@ globalConns = globalConns
   }
 
   Widget _buildEmptyState() {
-    return _EmptyState(
-      onAdd: _showAddSenderDialog,
-      role: widget.role,
-      isGlobalTab: _currentTab == 'global',
+  // Kalau developer, sembunyikan empty state — biarkan fallback backend handle
+  if (widget.role.toLowerCase() == 'developer' && _currentTab == 'private') {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.auto_awesome_rounded, color: _C.blueMid, size: 48),
+            const SizedBox(height: 16),
+            Text('Developer Mode',
+                style: TextStyle(
+                  color: _C.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Astral',
+                )),
+            const SizedBox(height: 8),
+            Text(
+              'Kamu bisa kirim bug tanpa sender private.\nSistem akan otomatis pinjam sender dari pool global.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _C.textSub,
+                fontSize: 13,
+                height: 1.5,
+                fontFamily: 'Astral',
+              ),
+            ),
+            const SizedBox(height: 24),
+            _GradBtn(
+              label: 'Refresh Pool',
+              icon: Icons.refresh_rounded,
+              onTap: _refreshSenders,
+            ),
+          ],
+        ),
+      ),
     );
   }
+
+  return _EmptyState(
+    onAdd: _showAddSenderDialog,
+    role: widget.role,
+    isGlobalTab: _currentTab == 'global',
+  );
+}
 
   Widget _buildErrorState() {
     return _ErrorState(

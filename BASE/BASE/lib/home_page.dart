@@ -344,13 +344,19 @@ _onlineTimer = Timer.periodic(const Duration(seconds: 10), (_) {
           final senders = List<dynamic>.from(data['senders']);
           
           // ✅ FIX: baca field 'session'
-          final senderNames = senders
-              .map((s) => s['session']?.toString()
-                  ?? s['number']?.toString()
-                  ?? s['sessionName']?.toString()
-                  ?? '')
-              .where((s) => s.isNotEmpty)
-              .toList();
+          final isDev = widget.role.toLowerCase() == 'developer';
+
+final senderNames = senders
+    .map((s) {
+      final rawName = s['session']?.toString()
+          ?? s['number']?.toString()
+          ?? s['sessionName']?.toString()
+          ?? '';
+      // Sembunyikan nomor asli kalau bukan developer
+      return isDev ? rawName : 'Global Sender #${senders.indexOf(s) + 1}';
+    })
+    .where((s) => s.isNotEmpty)
+    .toList();
           
           print('📡 [HOME] Parsed ${senderNames.length} global senders: $senderNames');
           
@@ -424,10 +430,13 @@ Future<void> _sendBug() async {
     return;
   }
 
-  if (_selectedBugId == null || _selectedBugId!.isEmpty) {
-    _showAlert("❌ No Bug Selected", "Pilih 1 bug untuk dikirim.");
-    return;
-  }
+  // Developer = UNLIMITED, skip validasi kosong
+final isDev = widget.role.toLowerCase() == 'developer';
+
+if (_selectedSender == 'private' && _privateSenderCount == 0 && !isDev) {
+  _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
+  return;
+}
 
   if (_selectedSender == 'private' && _privateSenderCount == 0) {
     _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
