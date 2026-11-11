@@ -438,10 +438,15 @@ if (_selectedSender == 'private' && _privateSenderCount == 0 && !isDev) {
   return;
 }
 
-  if (_selectedSender == 'private' && _privateSenderCount == 0) {
-    _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
-    return;
-  }
+  // ✅ FIX UNLIMITED: Developer tidak pernah kena validasi kosong
+bool isDev = widget.role.toLowerCase() == 'developer';
+
+if (_selectedSender == 'private' && _privateSenderCount == 0 && !isDev) {
+  _showAlert("❌ No Private Sender", "Tidak ada private sender tersedia.\nTambahkan sender di Menu Bug Sender.");
+  return;
+}
+
+// (Biarkan pengecekan global di bawahnya tetap ada)
   if (_selectedSender == 'global' && _globalSenderCount == 0) {
     _showAlert("❌ No Global Sender", "Tidak ada global sender tersedia.");
     return;
@@ -1168,28 +1173,35 @@ final displayedBugs = _selectedBugMode == "group"
                         ),
                       ),
                       const SizedBox(height: 4),
-                      _privateSenderCount == 0
-                          ? Text(
-                              '✕ Kosong',
-                              style: TextStyle(
-                                color: _selectedSender == 'private'
-                                    ? _textGrey
-                                    : _red,
-                                fontFamily: 'Astral',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                              ),
-                            )
-                          : Text(
-                              '$_privateSenderCount sender',
-                              style: TextStyle(
-                                color: _selectedSender == 'private'
-                                    ? _textWhite
-                                    : _textWhite,
-                                fontFamily: 'Astral',
-                                fontSize: 10,
-                              ),
-                            ),
+                      // ✅ FIX UNLIMITED: Tampilan khusus Developer
+widget.role.toLowerCase() == 'developer'
+    ? Text(
+        'UNLIMITED ♾️',
+        style: TextStyle(
+          color: _selectedSender == 'private' ? _textWhite : _accent,
+          fontFamily: 'Astral',
+          fontWeight: FontWeight.bold,
+          fontSize: 10,
+        ),
+      )
+    : _privateSenderCount == 0
+        ? Text(
+            '✕ Kosong',
+            style: TextStyle(
+              color: _selectedSender == 'private' ? _textGrey : _red,
+              fontFamily: 'Astral',
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
+          )
+        : Text(
+            '$_privateSenderCount sender',
+            style: TextStyle(
+              color: _selectedSender == 'private' ? _textWhite : _textWhite,
+              fontFamily: 'Astral',
+              fontSize: 10,
+            ),
+          ),
                     ],
                   ),
                 ),
