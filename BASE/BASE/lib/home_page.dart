@@ -755,11 +755,16 @@ final endpoint = isTargetGroup ? '/sendBugGroup' : '/sendBug';
 
   // ─── BUILD TARGET INPUT DENGAN MODE 
   Widget _buildNomorDanBugPanel() {
-  // ✅ 1. TARUH LOGIKA FILTER DI SINI (DI DALAM FUNGSI)
-  // ✅ FIX: Filter super ketat, jangan biarin 'null' masuk ke Nomor
-final displayedBugs = _selectedBugMode == "group"
-    ? widget.listBug.where((b) => b['type'] == 'group').toList()
-    : widget.listBug.where((b) => b['type'] == 'nomor').toList();
+  // ✅ FIX TOTAL: Filter berdasarkan TIPE (nomor/group) DAN SENDER MODE (private/global)
+  final displayedBugs = widget.listBug.where((b) {
+    final isTypeMatch = _selectedBugMode == "group" 
+        ? b['type'] == 'group' 
+        : b['type'] == 'nomor';
+    
+    final isSenderMatch = b['senderMode'] == _selectedSender;
+    
+    return isTypeMatch && isSenderMatch;
+  }).toList();
 
   return _glassCard(
     padding: const EdgeInsets.all(14),
@@ -861,142 +866,150 @@ final displayedBugs = _selectedBugMode == "group"
         // ✅ 2. GUNAKAN displayedBugs DI SINI
         SizedBox(
           height: 130,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: displayedBugs.length, // <--- UBAH KE displayedBugs.length
-            physics: const BouncingScrollPhysics(),
-            itemBuilder: (context, index) {
-              final bug = displayedBugs[index]; // <--- UBAH KE displayedBugs[index]
-              final bugId = bug['bug_id'] as String? ?? '$index';
-              final bugName = bug['bug_name'] as String? ?? 'BUG';
-              final isSelected = _selectedBugId == bugId;
+          child: displayedBugs.isEmpty
+              ? Center(
+                  child: Text(
+                    "Tidak ada bug ${_selectedSender} untuk mode ini",
+                    style: TextStyle(color: _textGrey, fontFamily: 'Astral', fontSize: 12),
+                  ),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: displayedBugs.length, 
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final bug = displayedBugs[index]; 
+                    final bugId = bug['bug_id'] as String? ?? '$index';
+                    final bugName = bug['bug_name'] as String? ?? 'BUG';
+                    final isSelected = _selectedBugId == bugId;
 
-              final offsetY = _bugOffsets[bugId] ?? 0.0;
+                    final offsetY = _bugOffsets[bugId] ?? 0.0;
 
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: 12,
-                  left: index == 0 ? 0 : 0,
-                ),
-                child: GestureDetector(
-                  onTap: () {
-                    final controller = _bugAnimations[bugId];
-                    if (controller != null) {
-                      controller.forward(from: 0).then((_) {
-                        controller.reverse();
-                      });
-                    }
-                    
-                    setState(() {
-                      _selectedBugId = bugId;
-                    });
-                  },
-                  child: Transform.translate(
-                    offset: Offset(0, -offsetY * 20),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          width: 200,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: isSelected 
-                                ? _accent.withOpacity(0.3)
-                                : _accent.withOpacity(0.1),
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        right: 12,
+                        left: index == 0 ? 0 : 0,
+                      ),
+                      child: GestureDetector(
+                        onTap: () {
+                          final controller = _bugAnimations[bugId];
+                          if (controller != null) {
+                            controller.forward(from: 0).then((_) {
+                              controller.reverse();
+                            });
+                          }
+                          
+                          setState(() {
+                            _selectedBugId = bugId;
+                          });
+                        },
+                        child: Transform.translate(
+                          offset: Offset(0, -offsetY * 20),
+                          child: ClipRRect(
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected 
-                                  ? _accent 
-                                  : _accent.withOpacity(0.3),
-                              width: isSelected ? 2 : 1.2,
-                            ),
-                            boxShadow: isSelected ? [
-                              BoxShadow(
-                                color: _accent.withOpacity(0.3), 
-                                blurRadius: 25, 
-                                spreadRadius: 3
-                              )
-                            ] : [],
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.shield_rounded,
-                                color: isSelected ? _textWhite : _textGrey,
-                                size: 28,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                width: 200,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: isSelected 
+                                      ? _accent.withOpacity(0.3)
+                                      : _accent.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected 
+                                        ? _accent 
+                                        : _accent.withOpacity(0.3),
+                                    width: isSelected ? 2 : 1.2,
+                                  ),
+                                  boxShadow: isSelected ? [
+                                    BoxShadow(
+                                      color: _accent.withOpacity(0.3), 
+                                      blurRadius: 25, 
+                                      spreadRadius: 3
+                                    )
+                                  ] : [],
+                                ),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      bugName,
-                                      style: TextStyle(
-                                        color: isSelected ? _textWhite : _textGrey,
-                                        fontFamily: 'Astral',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        letterSpacing: 0.5,
-                                      ),
-                                      overflow: TextOverflow.visible,
-                                      maxLines: 1,
+                                    Icon(
+                                      Icons.shield_rounded,
+                                      color: isSelected ? _textWhite : _textGrey,
+                                      size: 28,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      bugId.toLowerCase(),
-                                      style: TextStyle(
-                                        color: isSelected 
-                                            ? _textWhite.withOpacity(0.7) 
-                                            : _textGrey,
-                                        fontFamily: 'Astral',
-                                        fontSize: 11,
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            bugName,
+                                            style: TextStyle(
+                                              color: isSelected ? _textWhite : _textGrey,
+                                              fontFamily: 'Astral',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              letterSpacing: 0.5,
+                                            ),
+                                            overflow: TextOverflow.visible,
+                                            maxLines: 1,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            bugId.toLowerCase(),
+                                            style: TextStyle(
+                                              color: isSelected 
+                                                  ? _textWhite.withOpacity(0.7) 
+                                                  : _textGrey,
+                                              fontFamily: 'Astral',
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
+                                    if (isSelected)
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: _green,
+                                        size: 22,
+                                      ),
                                   ],
                                 ),
                               ),
-                              if (isSelected)
-                                Icon(
-                                  Icons.check_circle,
-                                  color: _green,
-                                  size: 22,
-                                ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
         const SizedBox(height: 10),
         
         // ✅ 3. INDIKATOR TITIK-TITIK JUGA MENGGUNAKAN displayedBugs
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(displayedBugs.length, (i) {
-            final bug = displayedBugs[i];
-            final bugId = bug['bug_id'] as String? ?? '$i';
-            final isActive = _selectedBugId == bugId;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              width: isActive ? 18 : 6,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isActive ? _accent : _glassBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            );
-          }),
-        ),
+        if (displayedBugs.isNotEmpty)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(displayedBugs.length, (i) {
+              final bug = displayedBugs[i];
+              final bugId = bug['bug_id'] as String? ?? '$i';
+              final isActive = _selectedBugId == bugId;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                width: isActive ? 18 : 6,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isActive ? _accent : _glassBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              );
+            }),
+          ),
       ],
     ),
   );
