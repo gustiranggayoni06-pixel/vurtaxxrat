@@ -97,7 +97,7 @@ flutter:
 - assets/images/anime.jpg
 - assets/images/titan.jpg
 - assets/images/aot.jpg
-- assets/images/bg_jdm.jpg  # <--- TAMBAHKAN BARIS INI TUAN
+- assets/images/bg_jdm.jpg
 
     # ─── VIDEOS ──────────────────────────────────────────────────
     - assets/videos/splash.mp4
