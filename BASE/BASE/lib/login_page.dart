@@ -67,8 +67,8 @@ class _LoginPageState extends State<LoginPage>
   bool _isLoading       = false;
   bool _obscurePass     = true;
   String? _androidId;
-  late VideoPlayerController _videoController;
-  bool _videoInitialized = false;
+//  late VideoPlayerController _videoController;
+ // bool _videoInitialized = false;
 
   late AnimationController _entranceCtrl;
   late AnimationController _logoCtrl;
@@ -85,15 +85,15 @@ class _LoginPageState extends State<LoginPage>
   void initState() {
     super.initState();
 
-    _videoController = VideoPlayerController.asset('assets/videos/background.mp4')
-      ..initialize().then((_) {
-        setState(() {
-          _videoInitialized = true;
-        });
-        _videoController.setLooping(true);
-        _videoController.setVolume(1.0);
-        _videoController.play();
-      });
+    //_videoController = VideoPlayerController.asset('assets/videos/background.mp4')
+  //    ..initialize().then((_) {
+    //    setState(() {
+     //     _videoInitialized = true;
+    //    });
+    //    _videoController.setLooping(true);
+    //    _videoController.setVolume(1.0);
+   //     _videoController.play();
+  //    });
 
     _entranceCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1000));
@@ -130,7 +130,7 @@ class _LoginPageState extends State<LoginPage>
 
   @override
   void dispose() {
-    _videoController.dispose();
+//    _videoController.dispose();
     _entranceCtrl.dispose();
     _logoCtrl.dispose();
     _btnCtrl.dispose();
@@ -343,27 +343,17 @@ class _LoginPageState extends State<LoginPage>
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          // Video Background
-          if (_videoInitialized)
-            Positioned.fill(
-              child: VideoPlayer(_videoController),
-            )
-          else
-            Positioned.fill(
-              child: Container(
-                color: _C.bg,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(_C.blueLight),
-                  ),
-                ),
-              ),
-            ),
-          
+          // SESUDAH (Ganti jadi Gambar)
+Positioned.fill(
+  child: Image.asset(
+    'assets/images/bg_jdm.jpg', // <--- Sesuaikan dengan nama file Tuan
+    fit: BoxFit.cover,
+  ),
+),
           // Overlay putih
           Positioned.fill(
             child: Container(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withOpacity(0.0),
             ),
           ),
 

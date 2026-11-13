@@ -133,12 +133,12 @@ class _LandingPageState extends State<LandingPage>
   void initState() {
     super.initState();
 
-    _videoController = VideoPlayerController.asset('assets/videos/background.mp4')
-      ..initialize().then((_) {
-        setState(() {});
-        _videoController.setLooping(true);
-        _videoController.play();
-      });
+  //  _videoController = VideoPlayerController.asset('assets/videos/background.mp4')
+    //  ..initialize().then((_) {
+   //     setState(() {});
+     //   _videoController.setLooping(true);
+   //     _videoController.play();
+   //   });
 
     _fadeCtrl = AnimationController(
       vsync: this,
@@ -158,7 +158,7 @@ class _LandingPageState extends State<LandingPage>
 
   @override
   void dispose() {
-    _videoController.dispose();
+  //  _videoController.dispose();
     _fadeCtrl.dispose();
     _floatCtrl.dispose();
     super.dispose();
@@ -177,28 +177,17 @@ class _LandingPageState extends State<LandingPage>
       backgroundColor: _C.bgTop,
       body: Stack(
         children: [
-          // ====== BACKGROUND VIDEO ======
-          Positioned.fill(
-            child: _videoController.value.isInitialized
-                ? VideoPlayer(_videoController)
-                : Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          _C.bgTop,
-                          _C.bgBottom,
-                          Color(0xFFDCEEFB),
-                        ],
-                      ),
-                    ),
-                  ),
-          ),
+          // ====== BACKGROUND GAMBAR (GANTI DI SINI) ======
+Positioned.fill(
+  child: Image.asset(
+    'assets/images/bg_jdm.jpg', // <--- GANTI DENGAN NAMA FILE GAMBAR TUAN
+    fit: BoxFit.cover,
+  ),
+),
           // ====== OVERLAY PUTIH ======
           Positioned.fill(
             child: Container(
-              color: Colors.white.withOpacity(0.65),
+              color: Colors.white.withOpacity(0.0),
             ),
           ),
           // ====== KONTEN ======
