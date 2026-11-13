@@ -327,49 +327,50 @@ _onlineTimer = Timer.periodic(const Duration(seconds: 10), (_) {
 
   // ─── FETCH GLOBAL SENDERS ────────────────────────────────────────
   Future<void> _fetchGlobalSenders() async {
-    try {
-      final url = "$baseUrl/getPublicSenders?key=${widget.sessionKey}";
-      print('📡 [HOME] Fetching global senders: $url');
+  try {
+    final url = "$baseUrl/getPublicSenders?key=${widget.sessionKey}";
+    print('📡 [HOME] Fetching global senders: $url');
 
-      final res = await http.get(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+    final res = await http.get(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(const Duration(seconds: 10));
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        print('📡 [HOME] Global response: $data');
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      print('📡 [HOME] Global response: $data');
+      
+      if (data['valid'] == true && data['senders'] != null) {
+        final senders = List<dynamic>.from(data['senders']);
         
-        if (data['valid'] == true && data['senders'] != null) {
-          final senders = List<dynamic>.from(data['senders']);
-          
-          // ✅ FIX: baca field 'session'
-          final isDev = widget.role.toLowerCase() == 'developer';
+        final isDev = widget.role.toLowerCase() == 'developer';
 
-final senderNames = senders
-    .map((s) {
-      final rawName = s['session']?.toString()
-          ?? s['number']?.toString()
-          ?? s['sessionName']?.toString()
-          ?? '';
-      // Sembunyikan nomor asli kalau bukan developer
-      return isDev ? rawName : 'Global Sender #${senders.indexOf(s) + 1}';
-    })
-    .where((s) => s.isNotEmpty)
-    .toList();
+        // ✅ FIX: Saring hanya sender yang beneran aktif/online
+        // Dan sembunyikan nomor asli kalau bukan developer
+        final activeSenders = senders.where((s) {
+          final isActive = s['isActive'] == true || s['status'] == 'connected';
+          return isActive;
+        }).map((s) {
+          final rawName = s['session']?.toString()
+              ?? s['number']?.toString()
+              ?? s['sessionName']?.toString()
+              ?? '';
           
-          print('📡 [HOME] Parsed ${senderNames.length} global senders: $senderNames');
-          
-          if (mounted) {
-            setState(() {
-              _globalSenders = senderNames.cast<String>();
-              _globalSenderCount = _globalSenders.length;
-            });
+          // Developer liat nomor asli, selain dev liat "Global Sender #X"
+          if (isDev) {
+            return rawName;
+          } else {
+            final index = senders.indexOf(s) + 1;
+            return 'Global Sender #$index';
           }
-        } else {
-          if (mounted) setState(() {
-            _globalSenders = [];
-            _globalSenderCount = 0;
+        }).where((s) => s.isNotEmpty).toList();
+        
+        print('📡 [HOME] Parsed ${activeSenders.length} active global senders');
+        
+        if (mounted) {
+          setState(() {
+            _globalSenders = activeSenders.cast<String>();
+            _globalSenderCount = _globalSenders.length;
           });
         }
       } else {
@@ -378,14 +379,20 @@ final senderNames = senders
           _globalSenderCount = 0;
         });
       }
-    } catch (e) {
-      print('❌ [HOME] Error fetching global: $e');
+    } else {
       if (mounted) setState(() {
         _globalSenders = [];
         _globalSenderCount = 0;
       });
     }
+  } catch (e) {
+    print('❌ [HOME] Error fetching global: $e');
+    if (mounted) setState(() {
+      _globalSenders = [];
+      _globalSenderCount = 0;
+    });
   }
+}
 
   // ─── FORMAT PHONE ─────────────────────────────────────────────────
   String? formatPhoneNumber(String input) {
