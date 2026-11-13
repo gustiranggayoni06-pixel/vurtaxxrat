@@ -85,18 +85,19 @@ flutter:
   uses-material-design: true
 
   assets:
-    # ─── IMAGES ──────────────────────────────────────────────────
-    - assets/images/logo.jpg
-    - assets/images/logo.png
-    - assets/images/mantaa.jpg
-    - assets/images/world_cup_foreground.png
-    - assets/images/profile_card_bg.jpg
-    - assets/images/putih.jpg
-    - assets/images/background.jpg
-    - assets/images/eren.jpg
-    - assets/images/anime.jpg
-    - assets/images/titan.jpg
-    - assets/images/aot.jpg
+    # ─── IMAGES ──────────────────────────────────────────────
+- assets/images/logo.jpg
+- assets/images/logo.png
+- assets/images/mantaa.jpg
+- assets/images/world_cup_foreground.png
+- assets/images/profile_card_bg.jpg
+- assets/images/putih.jpg
+- assets/images/background.jpg
+- assets/images/eren.jpg
+- assets/images/anime.jpg
+- assets/images/titan.jpg
+- assets/images/aot.jpg
+- assets/images/bg_jdm.jpg  # <--- TAMBAHKAN BARIS INI TUAN
 
     # ─── VIDEOS ──────────────────────────────────────────────────
     - assets/videos/splash.mp4
