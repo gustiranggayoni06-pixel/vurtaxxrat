@@ -197,9 +197,10 @@ class _LoginPageState extends State<LoginPage>
         }
       } else {
         final prefs = await SharedPreferences.getInstance();
-        prefs.setString('username', username);
-        prefs.setString('password', password);
-        prefs.setString('key', data['key']);
+        // Tunggu sampai kredensial tersimpan sebelum berpindah halaman.
+        await prefs.setString('username', username);
+        await prefs.setString('password', password);
+        await prefs.setString('key', data['key']);
 
         if (mounted) {
           Navigator.pushReplacement(
