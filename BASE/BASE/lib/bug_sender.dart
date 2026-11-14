@@ -278,31 +278,27 @@ if (widget.role.toLowerCase() == 'developer' && privateConns.isEmpty) {
       }
 
       final globalRes = await http.get(
-        Uri.parse("$baseUrl/getPublicSenders?key=${widget.sessionKey}"),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 15));
+  Uri.parse("$baseUrl/mySender?key=${widget.sessionKey}"), // ✅ GANTI JADI /mySender
+  headers: {'Content-Type': 'application/json'},
+).timeout(const Duration(seconds: 15));
 
       List<dynamic> globalConns = [];
 if (globalRes.statusCode == 200) {
   final data = jsonDecode(globalRes.body);
-  if (data['valid'] == true && data['senders'] != null) {
-    final senders = List<dynamic>.from(data['senders']);
-    globalConns = senders.map((s) {
-      final session = s['session']?.toString() ??
-          s['number']?.toString() ??
-          s['sessionName']?.toString() ??
-          '';
-      final isActive = s['isActive'] == true;
-      return {
-        'sessionName': session,
-        'number': session,
-        'id': session,
-        'status': isActive ? 'connected' : 'disconnected',
-        'isPublic': true,
-        'type': 'global',
-      };
-    }).where((s) => s['sessionName'].toString().isNotEmpty).toList();
-  }
+  if (data['valid'] == true && data['connections'] != null && data['connections']['global'] != null) {
+  final senders = List<dynamic>.from(data['connections']['global']); // ✅ BACA DARI SINI
+  globalConns = senders.map((s) {
+    final session = s['sessionName']?.toString() ?? "";
+    final isActive = s['status'] == 'connected';
+    return {
+      'sessionName': session,
+      'number': s['number']?.toString() ?? session,
+      'type': 'global',
+      'isActive': isActive,
+      // ... sesuaikan field lainnya
+    };
+  }).toList();
+}
 }
 
 // ✅ FIX: Hapus sender global yang juga ada di private milik user ini
