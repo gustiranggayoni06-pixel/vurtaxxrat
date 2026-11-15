@@ -260,6 +260,7 @@ class DashboardPage extends StatefulWidget {
     required this.sessionKey,
     required this.news,
   });
+}
 
 // ─── DASHBOARD PAGE STATE ──────────────────────────────────────────
 class _DashboardPageState extends State<DashboardPage> with TickerProviderStateMixin {
