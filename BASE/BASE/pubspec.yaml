@@ -43,6 +43,8 @@ dependencies:
   # ─── PERMISSION ───────────────────────────────────────────────
   permission_handler: ^11.3.1
   local_auth: ^2.3.0
+  local_auth_android: ^1.0.39
+  local_auth_darwin: ^1.4.0
 
   # ─── EXTRA ──────────────────────────────────────────────────────
   webview_flutter: ^4.9.0
