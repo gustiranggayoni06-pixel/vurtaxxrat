@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_darwin/local_auth_darwin.dart';
 import 'api_config.dart';
 import 'splash.dart';
 
@@ -143,141 +146,99 @@ class _LoginPageState extends State<LoginPage>
   }
 
   Future<void> _initLogin() async {
-    final info = await DeviceInfoPlugin().androidInfo;
-    _androidId = info.id;
-    // Login otomatis dinonaktifkan agar sesi tersimpan tidak melewati
-    // verifikasi perangkat. Pengguna dapat memakai tombol verifikasi perangkat.
-  }
-
-  List<Map<String, dynamic>> _parseList(dynamic raw) =>
-      (raw as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
-
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final username = userCtrl.text.trim();
-    final password = passCtrl.text.trim();
-
-    setState(() => _isLoading = true);
-
-    try {
-      final res  = await http.post(
-          Uri.parse('$baseUrl/validate'),
-          body: {
-            'username': username,
-            'password': password,
-            'androidId': _androidId ?? 'unknown',
-          });
-      final data = jsonDecode(res.body);
-
-      if (data['expired'] == true) {
-        _shakeCtrl.forward(from: 0);
-        _showAlert(
-          title: 'Akses Habis',
-          message: 'Masa akses Anda telah berakhir. Silakan perpanjang.',
-          type: _AlertType.warning,
-          showContact: true,
-        );
-      } else if (data['valid'] != true) {
-        _shakeCtrl.forward(from: 0);
-        final msg = (data['message'] ?? '').toString().toLowerCase();
-        if (msg.contains('perangkat') || msg.contains('device') ||
-            msg.contains('another')) {
-          _showAlert(
-            title: 'Sesi Aktif',
-            message: 'Akun ini sedang login di perangkat lain.',
-            type: _AlertType.warning,
-          );
-        } else {
-          _showAlert(
-            title: 'Login Gagal',
-            message: 'Username atau password salah.',
-            type: _AlertType.error,
-          );
-        }
-      } else {
-        final prefs = await SharedPreferences.getInstance();
-        // Tunggu sampai kredensial tersimpan sebelum berpindah halaman.
-        await prefs.setString('username', username);
-        await prefs.setString('password', password);
-        await prefs.setString('key', data['key']);
-
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => SplashScreen(
-              username: username, password: password,
-              role: data['role'], sessionKey: data['key'],
-              expiredDate: data['expiredDate'],
-              listBug:  _parseList(data['listBug']),
-              listDoos: _parseList(data['listDDoS']),
-              news:     _parseList(data['news']),
-            )),
-          );
-        }
-      }
-    } catch (_) {
-      _shakeCtrl.forward(from: 0);
-      _showAlert(
-        title: 'Koneksi Error',
-        message: 'Gagal terhubung ke server. Periksa jaringan Anda.',
-        type: _AlertType.error,
-      );
+  try {
+    if (Platform.isAndroid) {
+      final info = await DeviceInfoPlugin().androidInfo;
+      _androidId = info.id;
+    } else if (Platform.isIOS) {
+      final info = await DeviceInfoPlugin().iosInfo;
+      _androidId = info.identifierForVendor;
+    } else {
+      _androidId = 'unknown';
     }
+  } catch (_) {
+    _androidId = 'unknown';
+  }
+}
 
-    if (mounted) setState(() => _isLoading = false);
+Future<void> _deviceLogin() async {
+  if (_isLoading) return;
+
+  if (_androidId == null) await _initLogin();
+
+  final prefs = await SharedPreferences.getInstance();
+  final savedUser = prefs.getString('username');
+  final savedPass = prefs.getString('password');
+
+  if (savedUser == null || savedPass == null) {
+    _showAlert(
+      title: 'Belum pernah login',
+      message: 'Login manual dulu sekali agar fingerprint bisa dipakai.',
+      type: _AlertType.warning,
+    );
+    return;
   }
 
-  /// Verifikasi memakai autentikasi sistem perangkat (biometrik atau kredensial layar kunci).
-  Future<void> _deviceLogin() async {
-    if (_isLoading) return;
+  bool canCheck = false;
+  List<BiometricType> available = [];
+  try {
+    canCheck = await _localAuth.canCheckBiometrics;
+    available = await _localAuth.getAvailableBiometrics();
+  } catch (_) {}
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedUser = prefs.getString('username');
-      final savedPass = prefs.getString('password');
+  if (!canCheck && available.isEmpty) {
+    final supported = await _localAuth.isDeviceSupported();
+    if (!supported) {
+      _showAlert(
+        title: 'Verifikasi tidak didukung',
+        message: 'Perangkat ini tidak punya layar kunci / biometrik.',
+        type: _AlertType.warning,
+      );
+      return;
+    }
+  }
 
-      if (savedUser == null || savedPass == null) {
-        _showAlert(
-          title: 'Login perangkat belum tersedia',
-          message: 'Silakan login dengan username dan password terlebih dahulu.',
-          type: _AlertType.warning,
-        );
-        return;
-      }
-
-      final supported = await _localAuth.isDeviceSupported();
-      if (!supported) {
-        _showAlert(
-          title: 'Verifikasi tidak didukung',
-          message: 'Perangkat ini tidak mendukung verifikasi layar kunci.',
-          type: _AlertType.warning,
-        );
-        return;
-      }
-
-      final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Verifikasi untuk masuk ke akun VURTAX X RAT',
-        options: const AuthenticationOptions(
-          biometricOnly: false,
-          stickyAuth: true,
+  bool authenticated = false;
+  try {
+    authenticated = await _localAuth.authenticate(
+      localizedReason: 'Verifikasi untuk masuk ke VURTAX X RAT',
+      options: const AuthenticationOptions(
+        biometricOnly: false, 
+        stickyAuth: true, 
+        useErrorDialogs: true, 
+        sensitiveTransaction: true,
+      ),
+      authMessages: const [
+        AndroidAuthMessages(
+          signInTitle: 'Verifikasi VURTAX X RAT',
+          biometricHint: 'Sentuh sensor atau pakai PIN layar kunci',
+          biometricNotRecognized: 'Tidak dikenali, coba lagi',
+          biometricRequiredTitle: 'Biometrik diperlukan',
+          biometricSuccess: 'Terverifikasi',
+          cancelButton: 'Batal',
+          goToSettingsButton: 'Pengaturan',
+          goToSettingsDescription: 'Daftarkan sidik jari / wajah di pengaturan perangkat.',
+          deviceCredentialsRequiredTitle: 'Verifikasi perangkat',
+          deviceCredentialsSetupDescription: 'Atur PIN/pattern layar kunci.',
         ),
-      );
-
-      if (!authenticated || !mounted) return;
-
-      userCtrl.text = savedUser;
-      passCtrl.text = savedPass;
-      await _login();
-    } catch (e) {
-      if (!mounted) return;
-      _showAlert(
-        title: 'Verifikasi gagal',
-        message: 'Autentikasi perangkat gagal atau dibatalkan. Gunakan login biasa.',
-        type: _AlertType.error,
-      );
-    }
+        IOSAuthMessages(
+          cancelButton: 'Batal',
+          goToSettingsButton: 'Pengaturan',
+          goToSettingsDescription: 'Aktifkan Face ID / Touch ID di pengaturan.',
+          lockOut: 'Terlalu banyak percobaan. Pakai PIN.',
+        ),
+      ],
+    );
+  } on Exception catch (_) {
+    authenticated = false;
   }
+
+  if (!authenticated || !mounted) return;
+
+  userCtrl.text = savedUser;
+  passCtrl.text = savedPass;
+  await _login();
+}
 
   void _showAlert({
     required String title,
