@@ -416,9 +416,9 @@ Widget _buildLogoBox() {
             ),
           ],
         ),
-      ),
-    ), // <--- INI NUTUP MATERIAL
-  ); // <--- INI NUTUP CONTAINER (PAKAI TITIK KOMA)
+          ),
+  ),
+); 
 }
 
   Widget _buildBuyAksesButton() {

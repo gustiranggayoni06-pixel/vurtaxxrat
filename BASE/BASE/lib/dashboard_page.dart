@@ -4384,23 +4384,14 @@ void _showCommentSheet(
                                   onUpdate(comments, comments.length);
                                 }
                               }
-                            } catch (e) {
-  debugPrint('❌ Comment error: $e');
-} 
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
+                                      } catch (e) {
+            debugPrint('❌ Comment error: $e');
+          }
+        },
+      ),
+    ],
   );
 }
-
 // ═══════════════════════════════════════════════════════════════════════════
 // BUILD STORY CONTENT
 // ═══════════════════════════════════════════════════════════════════════════
