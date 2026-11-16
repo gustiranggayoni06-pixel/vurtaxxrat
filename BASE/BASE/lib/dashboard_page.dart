@@ -4385,9 +4385,8 @@ void _showCommentSheet(
                                 }
                               }
                             } catch (e) {
-                              debugPrint('❌ Comment error: $e');
-                            }
-                          },
+  debugPrint('❌ Comment error: $e');
+} 
                         ),
                       ],
                     ),

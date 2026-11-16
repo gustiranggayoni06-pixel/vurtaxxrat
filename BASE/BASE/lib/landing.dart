@@ -389,29 +389,37 @@ Widget _buildLogoBox() {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AnimasiJendela(nextPage: LoginPage())))),
-  borderRadius: BorderRadius.circular(14),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: const [
-      Icon(Icons.login_rounded, color: Colors.white, size: 20),
-      SizedBox(width: 8),
-      Text(
-        'MASUK',
-        style: TextStyle(
-          fontFamily: 'Astral',
-          color: Colors.white,
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.5,
+          child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AnimasiJendela(nextPage: LoginPage()),
+          ),
+        ),
+        borderRadius: BorderRadius.circular(14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.login_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text(
+              'MASUK',
+              style: TextStyle(
+                fontFamily: 'Astral',
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
-    ],
-  ),
-),
+    ), // <--- INI NUTUP MATERIAL
+  ); // <--- INI NUTUP CONTAINER (PAKAI TITIK KOMA)
+}
 
   Widget _buildBuyAksesButton() {
     return Container(
