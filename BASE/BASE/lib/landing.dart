@@ -395,7 +395,7 @@ Widget _buildLogoBox() {
   onTap: () => Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (_) => AnimasiJendela(nextPage: const LoginPage()),
+      builder: (_) => AnimasiJendela(nextPage: LoginPage()),
     ),
   )),
   borderRadius: BorderRadius.circular(14),
