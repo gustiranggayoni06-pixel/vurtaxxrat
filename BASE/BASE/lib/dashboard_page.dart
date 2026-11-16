@@ -4410,7 +4410,7 @@ Widget _buildStoryContent({
   required String content,
   required String mediaUrl,
 {
-  // TEXT
+  // 1. BLOK TEXT
   if (type == 'text') {
     return Container(
       color: Colors.black,
@@ -4434,7 +4434,7 @@ Widget _buildStoryContent({
     );
   }
 
-  // IMAGE
+  // 2. BLOK IMAGE
   if (type == 'image') {
     return Container(
       color: Colors.black,
@@ -4474,40 +4474,13 @@ Widget _buildStoryContent({
     );
   }
 
-  // VIDEO — pakai widget terpisah
+  // 3. BLOK VIDEO
   if (type == 'video') {
-    if (!mediaUrl.startsWith('http')) {
-      return Container(
-        color: Colors.black,
-        child: const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.videocam_off_rounded,
-                  color: Colors.white54, size: 60),
-              SizedBox(height: 12),
-              Text('URL video tidak valid',
-                  style: TextStyle(
-                      color: Colors.white70,
-                      fontFamily: 'Astral',
-                      fontSize: 14)),
-            ],
-          ),
-        ),
-      );
-    }
-    return _StoryVideoWidget(mediaUrl: mediaUrl);
+    return _StoryVideoWidget(mediaUrl: mediaUrl); 
   }
 
-  return Container(
-    color: Colors.black,
-    child: const Center(
-      child: Text(
-        'Konten tidak didukung',
-        style: TextStyle(color: Colors.white54, fontFamily: 'Astral'),
-      ),
-    ),
-  );
+  // 4. CADANGAN (JIKA TYPE BUKAN TEXT, IMAGE, ATAU VIDEO)
+  return const SizedBox.shrink(); 
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -392,32 +392,31 @@ Widget _buildLogoBox() {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const AnimasiJendela(nextPage: LoginPage()),
-  ),
-          borderRadius: BorderRadius.circular(14),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.login_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'MASUK',
-                style: TextStyle(
-                  fontFamily: 'Astral',
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ],
-          ),
+  onTap: () => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AnimasiJendela(nextPage: const LoginPage()),
+    ),
+  )),
+  borderRadius: BorderRadius.circular(14),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: const [
+      Icon(Icons.login_rounded, color: Colors.white, size: 20),
+      SizedBox(width: 8),
+      Text(
+        'MASUK',
+        style: TextStyle(
+          fontFamily: 'Astral',
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.5,
         ),
       ),
-    );
+    ],
+  ),
+),
   }
 
   Widget _buildBuyAksesButton() {
