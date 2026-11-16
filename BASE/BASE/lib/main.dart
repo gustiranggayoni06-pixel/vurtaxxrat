@@ -11,6 +11,7 @@ import 'owner_page.dart';          // ✅ TAMBAHKAN
 import 'landing.dart';
 import 'public_chat_page.dart';
 // import 'api_config.dart';       // ✅ DIKOMENTAR
+import 'animasi_jendela.dart'; // ✅ TAMBAHIN INI
 
 void main() {
   runApp(MyApp());
@@ -28,7 +29,9 @@ class MyApp extends StatelessWidget {
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/':
-            return MaterialPageRoute(builder: (_) => const LandingPage());
+  return MaterialPageRoute(
+    builder: (_) => const AnimasiJendela(nextPage: LandingPage()),
+  );
 
           case '/login':
             return MaterialPageRoute(builder: (_) => const LoginPage());

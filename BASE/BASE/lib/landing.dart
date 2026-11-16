@@ -8,7 +8,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'api_config.dart';
 import 'login_page.dart';
-
+import 'animasi_jendela.dart';
 // ─── ROLE HELPERS (SINKRON DENGAN DASHBOARD PAGE) ────────────────────────
 const List<String> allRoles = [
   'developer', 'founder', 'kingz', 'high owner', 'owner', 'tk', 'admin', 'reseller', 'vip', 'member'
@@ -392,10 +392,11 @@ Widget _buildLogoBox() {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-          ),
+          onTap: () => Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => const AnimasiJendela(nextPage: LoginPage()),
+  ),
           borderRadius: BorderRadius.circular(14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
