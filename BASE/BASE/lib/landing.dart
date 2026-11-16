@@ -392,12 +392,7 @@ Widget _buildLogoBox() {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-  onTap: () => Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AnimasiJendela(nextPage: LoginPage()),
-    ),
-  )),
+  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AnimasiJendela(nextPage: LoginPage())))),
   borderRadius: BorderRadius.circular(14),
   child: Row(
     mainAxisAlignment: MainAxisAlignment.center,
@@ -417,7 +412,6 @@ Widget _buildLogoBox() {
     ],
   ),
 ),
-  }
 
   Widget _buildBuyAksesButton() {
     return Container(
