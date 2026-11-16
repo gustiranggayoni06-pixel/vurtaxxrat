@@ -49,8 +49,7 @@ import 'tes_func_page.dart';
 import 'developer_page.dart';
 import 'creator_page.dart';
 import 'kingz_page.dart';
-import 'device_dashboard.dart';   // ✅ PASTIKAN INI ADA
-import 'device_permission.dart'; // ✅ PASTIKAN INI ADA
+import 'device_dashboard.dart';
 import 'tiktok_page.dart';
 import 'chat_user.dart';
 
@@ -792,20 +791,20 @@ debugPrint('✅ Story video cleanup');
     Navigator.push(context, MaterialPageRoute(builder: (_) => page)).then((_) { if (mounted) { setState(() => _navIndex = 0); WidgetsBinding.instance.addPostFrameCallback((_) { if (_newsPageCtrl.hasClients) { setState(() { _currentNewsPage = 0.0; _newsPageViewKey++; }); _newsPageCtrl.jumpToPage(0); } }); } });
   }
 
-    Widget _buildCurrentPage() {
-    switch (_navIndex) {
-      case 0: return _buildHomePage();
-      case 1: return DeviceDashboardPage(
-        username: username,
-        role: role,
-        sessionKey: sessionKey,
-      );
-      case 2: return _buildChatMenuPage();
-      case 3: return InfoPage(sessionKey: sessionKey);
-      case 4: return ToolsPage(sessionKey: sessionKey, userRole: role, listDoos: listDoos);
-      default: return _buildHomePage();
-    }
+  Widget _buildCurrentPage() {
+  switch (_navIndex) {
+    case 0: return _buildHomePage();
+    case 1: return DeviceDashboardPage(
+      username: username,
+      role: role,
+      sessionKey: sessionKey,
+    );
+    case 2: return _buildChatMenuPage();
+    case 3: return InfoPage(sessionKey: sessionKey);
+    case 4: return ToolsPage(sessionKey: sessionKey, userRole: role, listDoos: listDoos);
+    default: return _buildHomePage();
   }
+}
 
 // ─── SHOW CHAT USER DIALOG (FULL SCREEN) ──────────────────────────
 void _showChatUserDialog() {
@@ -3784,14 +3783,13 @@ Widget _buildQuickActionsSection() {
 
   // ─── BUILDBOTTOMNAV ──────────────────────────────────────────────
 Widget _buildBottomNav() {
-    final items = [
+  final items = [
     _NavItem(icon: Icons.home_rounded, label: 'HOME'),
     _NavItem(icon: Icons.devices_rounded, label: 'RAT'),
     _NavItem(icon: FontAwesomeIcons.whatsapp, label: 'BUG'),
     _NavItem(icon: Icons.info_outline_rounded, label: 'INFO'),
     _NavItem(icon: Icons.build_circle_outlined, label: 'TOOLS'),
   ];
-
 
   final Color primaryColor = kRed;
   final Color accentColor = kBorder;
@@ -4384,14 +4382,24 @@ void _showCommentSheet(
                                   onUpdate(comments, comments.length);
                                 }
                               }
-                                      } catch (e) {
-            debugPrint('❌ Comment error: $e');
-          }
-        },
-      ),
-    ],
+                            } catch (e) {
+                              debugPrint('❌ Comment error: $e');
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
   );
 }
+
 // ═══════════════════════════════════════════════════════════════════════════
 // BUILD STORY CONTENT
 // ═══════════════════════════════════════════════════════════════════════════
@@ -4399,8 +4407,8 @@ Widget _buildStoryContent({
   required String type,
   required String content,
   required String mediaUrl,
-{
-  // 1. BLOK TEXT
+}) {
+  // TEXT
   if (type == 'text') {
     return Container(
       color: Colors.black,
@@ -4424,7 +4432,7 @@ Widget _buildStoryContent({
     );
   }
 
-  // 2. BLOK IMAGE
+  // IMAGE
   if (type == 'image') {
     return Container(
       color: Colors.black,
@@ -4464,13 +4472,40 @@ Widget _buildStoryContent({
     );
   }
 
-  // 3. BLOK VIDEO
+  // VIDEO — pakai widget terpisah
   if (type == 'video') {
-    return _StoryVideoWidget(mediaUrl: mediaUrl); 
+    if (!mediaUrl.startsWith('http')) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.videocam_off_rounded,
+                  color: Colors.white54, size: 60),
+              SizedBox(height: 12),
+              Text('URL video tidak valid',
+                  style: TextStyle(
+                      color: Colors.white70,
+                      fontFamily: 'Astral',
+                      fontSize: 14)),
+            ],
+          ),
+        ),
+      );
+    }
+    return _StoryVideoWidget(mediaUrl: mediaUrl);
   }
 
-  // 4. CADANGAN (JIKA TYPE BUKAN TEXT, IMAGE, ATAU VIDEO)
-  return const SizedBox.shrink(); 
+  return Container(
+    color: Colors.black,
+    child: const Center(
+      child: Text(
+        'Konten tidak didukung',
+        style: TextStyle(color: Colors.white54, fontFamily: 'Astral'),
+      ),
+    ),
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
