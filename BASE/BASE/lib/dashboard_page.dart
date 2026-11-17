@@ -303,6 +303,11 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   // ─── DEVICE INFO ─────────────────────────────────────────────────
 int _onlineCount = 0;
 int _navIndex = 0;
+  String _selectedTheme = 'Ocean';
+  Color _themeBg = const Color(0xFFDCEEFB);
+  Color _themeCard = Colors.white;
+  Color _themeAccent = const Color(0xFF1565C0);
+  double _customHue = 210;
 int onlineUsers = 0;
 int activeConns = 0;
 int _carouselCurrentIndex = 0;
@@ -411,6 +416,7 @@ String get _batteryDisplay {
 
     _initAndroidId();
     _loadProfileImage();
+    _loadDashboardTheme();
     _initMenuVideo();
     _detectLocationAndFetchPrayer();
     _fetchRandomHadith();
@@ -3705,12 +3711,136 @@ Widget _buildQuickActionsSection() {
     );
   }
   
+  Future<void> _loadDashboardTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _selectedTheme = prefs.getString('dashboard_theme_$username') ?? 'Ocean';
+      _themeBg = Color(prefs.getInt('dashboard_bg_$username') ?? 0xFFDCEEFB);
+      _themeCard = Color(prefs.getInt('dashboard_card_$username') ?? 0xFFFFFFFF);
+      _themeAccent = Color(prefs.getInt('dashboard_accent_$username') ?? 0xFF1565C0);
+      _customHue = HSVColor.fromColor(_themeAccent).hue;
+    });
+  }
+
+  Future<void> _applyDashboardTheme(String name, Color bg, Color card, Color accent) async {
+    setState(() {
+      _selectedTheme = name;
+      _themeBg = bg;
+      _themeCard = card;
+      _themeAccent = accent;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dashboard_theme_$username', name);
+    await prefs.setInt('dashboard_bg_$username', bg.value);
+    await prefs.setInt('dashboard_card_$username', card.value);
+    await prefs.setInt('dashboard_accent_$username', accent.value);
+  }
+
+  void _showThemeSettings() {
+    const presets = <Map<String, dynamic>>[
+      {'name': 'Ocean', 'bg': Color(0xFFDCEEFB), 'card': Color(0xFFFFFFFF), 'accent': Color(0xFF1565C0)},
+      {'name': 'Midnight', 'bg': Color(0xFF101827), 'card': Color(0xFF1D2939), 'accent': Color(0xFF38BDF8)},
+      {'name': 'Forest', 'bg': Color(0xFFE5F2E8), 'card': Color(0xFFFFFFFF), 'accent': Color(0xFF23834A)},
+      {'name': 'Sunset', 'bg': Color(0xFFFFE9DD), 'card': Color(0xFFFFFAF6), 'accent': Color(0xFFE45D3A)},
+      {'name': 'Purple', 'bg': Color(0xFFF0E8FF), 'card': Color(0xFFFFFFFF), 'accent': Color(0xFF7746C8)},
+      {'name': 'Rose', 'bg': Color(0xFFFFE8EF), 'card': Color(0xFFFFFAFC), 'accent': Color(0xFFD83F75)},
+      {'name': 'Graphite', 'bg': Color(0xFF202124), 'card': Color(0xFF303134), 'accent': Color(0xFFFFC857)},
+      {'name': 'Minimal', 'bg': Color(0xFFF3F4F6), 'card': Color(0xFFFFFFFF), 'accent': Color(0xFF374151)},
+    ];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _themeCard,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) {
+        double hue = _customHue;
+        return StatefulBuilder(builder: (context, setSheetState) {
+          final customAccent = HSVColor.fromAHSV(1, hue, 0.78, 0.78).toColor();
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(children: [
+                      const Expanded(child: Text('PENGATURAN TEMA', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
+                      IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close)),
+                    ]),
+                    const Text('Pilih tampilan siap pakai', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: presets.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 2.8, crossAxisSpacing: 10, mainAxisSpacing: 10),
+                      itemBuilder: (context, index) {
+                        final item = presets[index];
+                        final selected = _selectedTheme == item['name'];
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            _applyDashboardTheme(item['name'] as String, item['bg'] as Color, item['card'] as Color, item['accent'] as Color);
+                            Navigator.pop(sheetContext);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(color: item['bg'] as Color, borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? item['accent'] as Color : Colors.black12, width: selected ? 2.5 : 1)),
+                            padding: const EdgeInsets.all(9),
+                            child: Row(children: [
+                              CircleAvatar(radius: 9, backgroundColor: item['accent'] as Color),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(item['name'] as String, style: TextStyle(color: (item['name'] == 'Midnight' || item['name'] == 'Graphite') ? Colors.white : Colors.black87, fontWeight: FontWeight.w600))),
+                              if (selected) Icon(Icons.check_circle, color: item['accent'] as Color, size: 18),
+                            ]),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 28),
+                    const Text('Kustom sendiri · pilih warna aksen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      CircleAvatar(backgroundColor: customAccent, radius: 15),
+                      const SizedBox(width: 10),
+                      Expanded(child: Slider(value: hue, min: 0, max: 360, onChanged: (v) => setSheetState(() { hue = v; }))),
+                    ]),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: customAccent, foregroundColor: Colors.white),
+                        onPressed: () {
+                          _customHue = hue;
+                          _applyDashboardTheme('Custom', _themeBg, _themeCard, customAccent);
+                          Navigator.pop(sheetContext);
+                        },
+                        icon: const Icon(Icons.palette_outlined),
+                        label: const Text('Terapkan warna kustom'),
+                      ),
+                    ),
+                    const Text('Warna latar dan kartu bisa dipilih dari preset; warna aksen dapat diatur bebas.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
+
     // ─── BUILD ────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Theme(
+      data: Theme.of(context).copyWith(
+        colorScheme: Theme.of(context).colorScheme.copyWith(primary: _themeAccent, secondary: _themeAccent),
+        scaffoldBackgroundColor: _themeBg,
+      ),
+      child: Scaffold(
       key: _scaffoldKey,
-      backgroundColor: kBg,
+      backgroundColor: _themeBg,
       extendBodyBehindAppBar: false,
       appBar: _buildAppBar(),
       drawer: _buildDrawer(),
@@ -3721,9 +3851,9 @@ Widget _buildQuickActionsSection() {
         child: Stack(
           children: [
             Container(
-              decoration: BoxDecoration(color: kBg),
+              decoration: BoxDecoration(color: _themeBg),
             ),
-            CustomPaint(size: Size.infinite, painter: _GridPatternPainter(gridColor: kBorder.withOpacity(0.2), lineColor: kRed.withOpacity(0.1), spacing: 35)),
+            CustomPaint(size: Size.infinite, painter: _GridPatternPainter(gridColor: _themeAccent.withOpacity(0.18), lineColor: _themeAccent.withOpacity(0.08), spacing: 35)),
             AnimatedSwitcher(duration: const Duration(milliseconds: 350), transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child), child: KeyedSubtree(key: ValueKey(_navIndex), child: _buildCurrentPage())),
             Positioned(left: 0, right: 0, bottom: 0, child: _SwipeUpHandle(onTap: _showNav, accentColor: kRed, lightColor: Colors.black54, bottomPadding: MediaQuery.of(context).padding.bottom)),
             if (_isNavVisible)
@@ -3741,13 +3871,14 @@ Widget _buildQuickActionsSection() {
           ],
         ),
       ),
+      ),
     );
   }
 
   // ─── BUILDAPPBAR ──────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: kCard,
+      backgroundColor: _themeCard,
       elevation: 0,
       iconTheme: const IconThemeData(color: Colors.black87),
       titleSpacing: 0,
@@ -3769,6 +3900,11 @@ Widget _buildQuickActionsSection() {
       ),
       centerTitle: false,
       actions: [
+        IconButton(
+          tooltip: 'Ubah tema',
+          onPressed: _showThemeSettings,
+          icon: Icon(Icons.palette_outlined, color: _themeAccent),
+        ),
         GestureDetector(
           onTap: () => Navigator.push(context, _slideRoute(ProfilePage(username: username, password: password, role: role, expiredDate: expiredDate, sessionKey: sessionKey))),
           child: Container(width: 38, height: 38, margin: const EdgeInsets.only(right: 8), decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: kRed.withOpacity(0.6), width: 2), color: kRed.withOpacity(0.2)),
