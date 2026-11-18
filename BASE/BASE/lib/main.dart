@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_theme.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'home_page.dart';
@@ -13,8 +14,10 @@ import 'public_chat_page.dart';
 // import 'api_config.dart';       // ✅ DIKOMENTAR
 import 'animasi_jendela.dart'; // ✅ TAMBAHIN INI
 
-void main() {
-  runApp(MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppThemeController.load();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -22,7 +25,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ValueListenableBuilder<AppThemeColors>(
+      valueListenable: AppThemeController.notifier,
+      builder: (context, appColors, _) {
+        final baseTheme = ThemeData(
+          useMaterial3: true,
+          fontFamily: 'Astral',
+        );
+        return MaterialApp(
+          theme: appColors.toTheme(baseTheme),
       // ... semua theme sama ...
 
       initialRoute: '/',
@@ -140,6 +151,8 @@ class MyApp extends StatelessWidget {
               ),
             );
         }
+      },
+        );
       },
     );
   }

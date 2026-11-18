@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'dart:math' show Random;
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -3712,13 +3713,13 @@ Widget _buildQuickActionsSection() {
   }
   
   Future<void> _loadDashboardTheme() async {
-    final prefs = await SharedPreferences.getInstance();
+    final saved = AppThemeController.current;
     if (!mounted) return;
     setState(() {
-      _selectedTheme = prefs.getString('dashboard_theme_$username') ?? 'Ocean';
-      _themeBg = Color(prefs.getInt('dashboard_bg_$username') ?? 0xFFDCEEFB);
-      _themeCard = Color(prefs.getInt('dashboard_card_$username') ?? 0xFFFFFFFF);
-      _themeAccent = Color(prefs.getInt('dashboard_accent_$username') ?? 0xFF1565C0);
+      _selectedTheme = saved.name;
+      _themeBg = saved.background;
+      _themeCard = saved.card;
+      _themeAccent = saved.accent;
       _customHue = HSVColor.fromColor(_themeAccent).hue;
     });
   }
@@ -3730,11 +3731,12 @@ Widget _buildQuickActionsSection() {
       _themeCard = card;
       _themeAccent = accent;
     });
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('dashboard_theme_$username', name);
-    await prefs.setInt('dashboard_bg_$username', bg.value);
-    await prefs.setInt('dashboard_card_$username', card.value);
-    await prefs.setInt('dashboard_accent_$username', accent.value);
+    await AppThemeController.setTheme(
+      name: name,
+      background: bg,
+      card: card,
+      accent: accent,
+    );
   }
 
   void _showThemeSettings() {
