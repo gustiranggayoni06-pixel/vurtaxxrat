@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'app_theme.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
@@ -27,14 +28,24 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<AppThemeColors>(
       valueListenable: AppThemeController.notifier,
-      builder: (context, appColors, _) {
-        final baseTheme = ThemeData(
-          useMaterial3: true,
-          fontFamily: 'Astral',
+      builder: (context, colors, _) => MaterialApp(
+      theme: colors.toTheme(ThemeData.light()),
+      builder: (context, child) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (colors.wallpaperPath != null && colors.wallpaperPath!.isNotEmpty)
+              Image.file(
+                File(colors.wallpaperPath!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => ColoredBox(color: colors.background),
+              )
+            else
+              ColoredBox(color: colors.background),
+            if (child != null) child,
+          ],
         );
-        return MaterialApp(
-          theme: appColors.toTheme(baseTheme),
-      // ... semua theme sama ...
+      },
 
       initialRoute: '/',
       onGenerateRoute: (settings) {
@@ -152,8 +163,7 @@ class MyApp extends StatelessWidget {
             );
         }
       },
-        );
-      },
+    ),
     );
   }
 }

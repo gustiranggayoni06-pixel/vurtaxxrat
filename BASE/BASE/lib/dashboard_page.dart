@@ -3739,6 +3739,44 @@ Widget _buildQuickActionsSection() {
     );
   }
 
+  Future<void> _pickGlobalWallpaper() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
+      if (picked == null) return;
+      final directory = await getApplicationDocumentsDirectory();
+      final extension = picked.path.contains('.')
+          ? picked.path.substring(picked.path.lastIndexOf('.'))
+          : '.jpg';
+      final saved = await File(picked.path).copy(
+        '${directory.path}/vurtax_wallpaper$extension',
+      );
+      await AppThemeController.setWallpaper(saved.path);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wallpaper global berhasil diterapkan')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memasang wallpaper: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeGlobalWallpaper() async {
+    await AppThemeController.setWallpaper(null);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Wallpaper global dihapus')),
+      );
+    }
+  }
+
   void _showThemeSettings() {
     const presets = <Map<String, dynamic>>[
       {'name': 'Ocean', 'bg': Color(0xFFDCEEFB), 'card': Color(0xFFFFFFFF), 'accent': Color(0xFF1565C0)},
@@ -3800,6 +3838,25 @@ Widget _buildQuickActionsSection() {
                         );
                       },
                     ),
+                    const Divider(height: 24),
+                    Row(children: [
+                      const Icon(Icons.wallpaper_rounded),
+                      const SizedBox(width: 10),
+                      const Expanded(child: Text('Wallpaper seluruh aplikasi', style: TextStyle(fontWeight: FontWeight.w600))),
+                      TextButton.icon(
+                        onPressed: _pickGlobalWallpaper,
+                        icon: const Icon(Icons.upload_rounded),
+                        label: const Text('Upload'),
+                      ),
+                    ]),
+                    if (AppThemeController.current.wallpaperPath != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _removeGlobalWallpaper,
+                          child: const Text('Hapus wallpaper'),
+                        ),
+                      ),
                     const Divider(height: 28),
                     const Text('Kustom sendiri · pilih warna aksen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),

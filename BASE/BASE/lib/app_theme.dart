@@ -6,12 +6,14 @@ class AppThemeColors {
   final Color background;
   final Color card;
   final Color accent;
+  final String? wallpaperPath;
 
   const AppThemeColors({
     required this.name,
     required this.background,
     required this.card,
     required this.accent,
+    this.wallpaperPath,
   });
 
   ThemeData toTheme(ThemeData base) {
@@ -125,6 +127,7 @@ class AppThemeController {
   static const _bgKey = 'vurtax_global_theme_bg';
   static const _cardKey = 'vurtax_global_theme_card';
   static const _accentKey = 'vurtax_global_theme_accent';
+  static const _wallpaperKey = 'vurtax_global_theme_wallpaper';
 
   static final ValueNotifier<AppThemeColors> notifier =
       ValueNotifier<AppThemeColors>(_defaultTheme);
@@ -145,6 +148,7 @@ class AppThemeController {
       background: Color(prefs.getInt(_bgKey) ?? _defaultTheme.background.value),
       card: Color(prefs.getInt(_cardKey) ?? _defaultTheme.card.value),
       accent: Color(prefs.getInt(_accentKey) ?? _defaultTheme.accent.value),
+      wallpaperPath: prefs.getString(_wallpaperKey),
     );
   }
 
@@ -153,17 +157,41 @@ class AppThemeController {
     required Color background,
     required Color card,
     required Color accent,
+    String? wallpaperPath,
   }) async {
     notifier.value = AppThemeColors(
       name: name,
       background: background,
       card: card,
       accent: accent,
+      wallpaperPath: wallpaperPath ?? current.wallpaperPath,
     );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_nameKey, name);
     await prefs.setInt(_bgKey, background.value);
     await prefs.setInt(_cardKey, card.value);
     await prefs.setInt(_accentKey, accent.value);
+    final path = notifier.value.wallpaperPath;
+    if (path == null || path.isEmpty) {
+      await prefs.remove(_wallpaperKey);
+    } else {
+      await prefs.setString(_wallpaperKey, path);
+    }
+  }
+
+  static Future<void> setWallpaper(String? path) async {
+    notifier.value = AppThemeColors(
+      name: current.name,
+      background: current.background,
+      card: current.card,
+      accent: current.accent,
+      wallpaperPath: path,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    if (path == null || path.isEmpty) {
+      await prefs.remove(_wallpaperKey);
+    } else {
+      await prefs.setString(_wallpaperKey, path);
+    }
   }
 }
