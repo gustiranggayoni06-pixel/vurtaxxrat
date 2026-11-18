@@ -31,7 +31,8 @@ class _PublicChatPageState extends State<PublicChatPage>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  List> _messages = [];
+  // UDAH GUA BENERIN DI SINI TUAAN!
+  List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
   String? _lastMessageId;
@@ -91,7 +92,8 @@ class _PublicChatPageState extends State<PublicChatPage>
         final data = jsonDecode(response.body);
         if (data['valid'] == true) {
           setState(() {
-            _messages = List>.from(data['messages'] ?? []);
+            // UDAH GUA BENERIN JUGA DI SINI TUAAN!
+            _messages = (data['messages'] as List).map((e) => e as Map<String, dynamic>).toList();
             if (_messages.isNotEmpty) {
               _lastMessageId = _messages.last['id'];
             }
@@ -119,7 +121,7 @@ class _PublicChatPageState extends State<PublicChatPage>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['valid'] == true && data['hasNew'] == true) {
-          final newMessages = List>.from(data['messages'] ?? []);
+          final newMessages = (data['messages'] as List).map((e) => e as Map<String, dynamic>).toList();
           if (newMessages.isNotEmpty) {
             setState(() {
               _messages.addAll(newMessages);
