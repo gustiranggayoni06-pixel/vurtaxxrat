@@ -31,7 +31,7 @@ class _PublicChatPageState extends State<PublicChatPage>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  List<Map<String, dynamic>> _messages = [];
+  List> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
   String? _lastMessageId;
@@ -79,7 +79,7 @@ class _PublicChatPageState extends State<PublicChatPage>
     super.dispose();
   }
 
-    Future<void> _loadMessages() async {
+  Future<void> _loadMessages() async {
     setState(() => _isLoading = true);
 
     try {
@@ -102,7 +102,6 @@ class _PublicChatPageState extends State<PublicChatPage>
     } catch (e) {
       print('Error loading messages: $e');
     } finally {
-      // Pastikan _isLoading selalu dimatikan baik berhasil maupun gagal
       setState(() => _isLoading = false);
     }
   }
@@ -120,7 +119,7 @@ class _PublicChatPageState extends State<PublicChatPage>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['valid'] == true && data['hasNew'] == true) {
-          final newMessages = List<Map<String, dynamic>>.from(data['messages'] ?? []);
+          final newMessages = List>.from(data['messages'] ?? []);
           if (newMessages.isNotEmpty) {
             setState(() {
               _messages.addAll(newMessages);
@@ -237,7 +236,6 @@ class _PublicChatPageState extends State<PublicChatPage>
       child: Column(
         crossAxisAlignment: isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          // Reply preview
           if (hasReply && repliedMessage != null)
             Container(
               margin: const EdgeInsets.only(bottom: 4),
@@ -285,8 +283,6 @@ class _PublicChatPageState extends State<PublicChatPage>
                 ],
               ),
             ),
-
-          // Message bubble
           GestureDetector(
             onLongPress: () {
               if (!isOwn) {
@@ -509,10 +505,7 @@ class _PublicChatPageState extends State<PublicChatPage>
       ),
       body: Column(
         children: [
-          // Reply bar
           _buildReplyBar(),
-
-          // Chat messages
           Expanded(
             child: _isLoading
                 ? Center(
@@ -568,8 +561,6 @@ class _PublicChatPageState extends State<PublicChatPage>
                         ),
                       ),
           ),
-
-          // Input field
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
