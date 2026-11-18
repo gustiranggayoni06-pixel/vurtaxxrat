@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'http/http.dart' as http;
+import 'package:http/http.dart' as http; // ✅ Benar (menggunakan package eksternal)
 import 'dart:convert';
 import 'dart:async';
 import 'device_permission.dart';
