@@ -79,31 +79,31 @@ class _PublicChatPageState extends State<PublicChatPage>
     super.dispose();
   }
 
-  Future<void> _loadMessages() async {
+    Future<void> _loadMessages() async {
     setState(() => _isLoading = true);
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/publicChat?key=${widget.sessionKey}',
-        ),
+        Uri.parse('$baseUrl/publicChat?key=${widget.sessionKey}'),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['valid'] == true) {
           setState(() {
-            _messages = List<Map<String, dynamic>>.from(data['messages'] ?? []);
+            _messages = List>.from(data['messages'] ?? []);
             if (_messages.isNotEmpty) {
               _lastMessageId = _messages.last['id'];
             }
-            _isLoading = false;
           });
           _scrollToBottom();
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       print('Error loading messages: $e');
+    } finally {
+      // Pastikan _isLoading selalu dimatikan baik berhasil maupun gagal
+      setState(() => _isLoading = false);
     }
   }
 
