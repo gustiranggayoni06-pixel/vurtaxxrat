@@ -157,18 +157,18 @@ class _ThanksToPageState extends State<ThanksToPage> {
     setState(() {
       contributors = [
         {
-          'nama': 'ᯓ ZAXX',
-          'telegram': '@zaxx_str', 
+          'nama': '⏤͟͟͞𝟕𝟎𝟕 Ranzz',
+          'telegram': '@ranzz_offc', 
           'role': 'LEAD DEVELOPER',
-          'avatar': 'https://ziperr-img.lovable.app/i/wvurlkeo.jpg',
-          'telegram_url': 'https://t.me/ranzz_offczaxx_stur',
+          'avatar': 'https://imagetourls.com/id/v?u=https%3A%2F%2Fcdn.imagetourls.com%2Fuploads%2FtyImg%2Fna8X2YkS.jpg',
+          'telegram_url': 'https://t.me/ranzz_offc',
         },
         {
-          'nama': 'ᯓ VURTAX X RAT TEAM',
-          'telegram': '@zaxx_stur', 
+          'nama': 'ᯓ VURTAX X RAT CHANNEL',
+          'telegram': '@ranzz_offc', 
           'role': 'TELEGRAM CHANNEL',
-          'avatar': 'https://ziperr-img.lovable.app/i/wvurlkeo.jpg',
-          'telegram_url': 'https://t.me/ranzz_offczaxx_str05',
+          'avatar': 'https://imagetourls.com/id/v?u=https%3A%2F%2Fcdn.imagetourls.com%2Fuploads%2FtyImg%2FML1TWbxK.jpg',
+          'telegram_url': 'https://t.me/ranzz_offc',
         },
       ];
       _isLoading = false;
