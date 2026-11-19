@@ -126,62 +126,62 @@ class _PublicChatPageState extends State<PublicChatPage>
   }
 
   Future<void> _loadMessages() async {
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final uri = Uri.parse(
-        '$baseUrl/api/chat/messages?session_key=${Uri.encodeComponent(widget.sessionKey)}',
-      );
-      final response = await http.get(uri);
+  try {
+    final uri = Uri.parse(
+      '$baseUrl/publicChat?key=${Uri.encodeComponent(widget.sessionKey)}',
+    );
+    final response = await http.get(uri);
 
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final parsed = _parseMessagesList(decoded);
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      final parsed = _parseMessagesList(decoded);
 
-        if (!mounted) return;
+      if (!mounted) return;
+      setState(() {
+        _messages = parsed;
+      });
+      _scrollToBottom();
+    }
+  } catch (_) {
+    // Tangani error jaringan secara aman tanpa crash
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+}
+
+Future<void> _pollNewMessages() async {
+  if (_isLoading || !mounted) return;
+
+  try {
+    final uri = Uri.parse(
+      '$baseUrl/publicChat?key=${Uri.encodeComponent(widget.sessionKey)}',
+    );
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      final latestMessages = _parseMessagesList(decoded);
+
+      final hasChanged = latestMessages.length != _messages.length ||
+          (latestMessages.isNotEmpty &&
+              _messages.isNotEmpty &&
+              latestMessages.last['id'] != _messages.last['id']);
+
+      if (hasChanged && mounted) {
         setState(() {
-          _messages = parsed;
+          _messages = latestMessages;
         });
         _scrollToBottom();
       }
-    } catch (_) {
-      // Tangani error jaringan secara aman tanpa crash
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
     }
+  } catch (_) {
+    // Silent error untuk polling
   }
-
-  Future<void> _pollNewMessages() async {
-    if (_isLoading || !mounted) return;
-
-    try {
-      final uri = Uri.parse(
-        '$baseUrl/api/chat/messages?session_key=${Uri.encodeComponent(widget.sessionKey)}',
-      );
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final latestMessages = _parseMessagesList(decoded);
-
-        final hasChanged = latestMessages.length != _messages.length ||
-            (latestMessages.isNotEmpty &&
-                _messages.isNotEmpty &&
-                latestMessages.last['id'] != _messages.last['id']);
-
-        if (hasChanged && mounted) {
-          setState(() {
-            _messages = latestMessages;
-          });
-          _scrollToBottom();
-        }
-      }
-    } catch (_) {
-      // Silent error untuk polling
-    }
-  }
+}
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
@@ -191,19 +191,15 @@ class _PublicChatPageState extends State<PublicChatPage>
 
     try {
       final body = <String, dynamic>{
-        'session_key': widget.sessionKey,
-        'username': widget.username,
-        'role': widget.role,
-        'message': text,
-        if (_replyTo != null && (_replyTo!['id']?.toString().isNotEmpty ?? false))
-          'replyTo': _replyTo!['id'],
-      };
+  'key': widget.sessionKey,
+  'message': text,
+};
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/chat/send'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+final response = await http.post(
+  Uri.parse('$baseUrl/publicChat'),
+  headers: {'Content-Type': 'application/json'},
+  body: jsonEncode(body),
+);
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
