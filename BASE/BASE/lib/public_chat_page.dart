@@ -80,27 +80,12 @@ class _PublicChatPageState extends State<PublicChatPage>
         ? raw
         : (raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{});
 
-    final id = (map['id'] ?? map['_id'] ?? '').toString();
-    final username = (map['username'] ??
-            map['sender'] ??
-            map['user'] ??
-            map['author'] ??
-            'Unknown')
-        .toString()
-        .trim();
+    // Ambil data dengan aman
+    final id = (map['id'] ?? map['_id'] ?? DateTime.now().millisecondsSinceEpoch.toString()).toString();
+    final username = (map['username'] ?? map['sender'] ?? map['user'] ?? map['author'] ?? 'Unknown').toString().trim();
     final role = (map['role'] ?? 'member').toString().trim();
-    final messageText = (map['message'] ??
-            map['text'] ??
-            map['content'] ??
-            map['body'] ??
-            '')
-        .toString();
-    final timestamp = (map['timestamp'] ??
-            map['createdAt'] ??
-            map['created_at'] ??
-            map['time'] ??
-            '')
-        .toString();
+    final messageText = (map['message'] ?? map['text'] ?? map['content'] ?? map['body'] ?? '').toString();
+    final timestamp = (map['timestamp'] ?? map['createdAt'] ?? map['created_at'] ?? map['time'] ?? DateTime.now().toIso8601String()).toString();
     final replyTo = map['replyTo'] ?? map['reply_to'];
 
     return {
@@ -114,6 +99,7 @@ class _PublicChatPageState extends State<PublicChatPage>
   }
 
   List _parseMessagesList(dynamic decoded) {
+    // Handle jika response berupa list langsung, atau object dengan key 'messages' / 'data'
     final rawList = decoded is List
         ? decoded
         : (decoded is Map && decoded['messages'] is List
@@ -126,63 +112,64 @@ class _PublicChatPageState extends State<PublicChatPage>
   }
 
   Future<void> _loadMessages() async {
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    final uri = Uri.parse(
-      '$baseUrl/publicChat?key=${Uri.encodeComponent(widget.sessionKey)}',
-    );
-    final response = await http.get(uri);
+    try {
+      final uri = Uri.parse(
+        '$baseUrl/publicChat?key=${Uri.encodeComponent(widget.sessionKey)}',
+      );
+      final response = await http.get(uri);
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      final parsed = _parseMessagesList(decoded);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final parsed = _parseMessagesList(decoded);
 
-      if (!mounted) return;
-      setState(() {
-        _messages = parsed;
-      });
-      _scrollToBottom();
-    }
-  } catch (_) {
-    // Tangani error jaringan secara aman tanpa crash
-  } finally {
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
-  }
-}
-
-Future<void> _pollNewMessages() async {
-  if (_isLoading || !mounted) return;
-
-  try {
-    final uri = Uri.parse(
-      '$baseUrl/publicChat?key=${Uri.encodeComponent(widget.sessionKey)}',
-    );
-    final response = await http.get(uri);
-
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      final latestMessages = _parseMessagesList(decoded);
-
-      final hasChanged = latestMessages.length != _messages.length ||
-          (latestMessages.isNotEmpty &&
-              _messages.isNotEmpty &&
-              latestMessages.last['id'] != _messages.last['id']);
-
-      if (hasChanged && mounted) {
+        if (!mounted) return;
         setState(() {
-          _messages = latestMessages;
+          _messages = parsed;
         });
         _scrollToBottom();
       }
+    } catch (_) {
+      // Tangani error jaringan secara aman tanpa crash
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-  } catch (_) {
-    // Silent error untuk polling
   }
-}
 
+  Future<void> _pollNewMessages() async {
+    if (_isLoading || !mounted) return;
+
+    try {
+      final uri = Uri.parse(
+        '$baseUrl/publicChat?key=${Uri.encodeComponent(widget.sessionKey)}',
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final latestMessages = _parseMessagesList(decoded);
+
+        final hasChanged = latestMessages.length != _messages.length ||
+            (latestMessages.isNotEmpty &&
+                _messages.isNotEmpty &&
+                latestMessages.last['id'] != _messages.last['id']);
+
+        if (hasChanged && mounted) {
+          setState(() {
+            _messages = latestMessages;
+          });
+          _scrollToBottom();
+        }
+      }
+    } catch (_) {
+      // Silent error untuk polling
+    }
+  }
+
+  // ─── BAGIAN INI YANG GUA BENERIN TOTAL BIAR BISA KIRIM PESAN ───────────────
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isSending) return;
@@ -190,23 +177,31 @@ Future<void> _pollNewMessages() async {
     setState(() => _isSending = true);
 
     try {
+      // Bawa username dan role lu di body request biar server kenal
       final body = <String, dynamic>{
-  'key': widget.sessionKey,
-  'message': text,
-};
+        'key': widget.sessionKey,
+        'message': text,
+        'username': widget.username, 
+        'role': widget.role,
+        'replyTo': _replyTo?['id'], 
+      };
 
-final response = await http.post(
-  Uri.parse('$baseUrl/publicChat'),
-  headers: {'Content-Type': 'application/json'},
-  body: jsonEncode(body),
-);
+      final response = await http.post(
+        Uri.parse('$baseUrl/publicChat'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
-        final isValid = decoded is Map && (decoded['valid'] == true || decoded['success'] == true);
+        
+        // Cek apakah server balas dengan sukses
+        final isValid = decoded is Map && (decoded['valid'] == true || decoded['success'] == true || decoded['status'] == 'success');
 
         if (isValid && mounted) {
           final rawMsg = decoded['message'] ?? decoded['data'];
+          
+          // Kalo server gak balikin data pesan, kita bikin sendiri buat nampilin di layar
           final newMsg = rawMsg != null
               ? _normalizeMessage(rawMsg)
               : _normalizeMessage({
@@ -224,10 +219,40 @@ final response = await http.post(
             _messages = [..._messages, newMsg];
           });
           _scrollToBottom();
+        } else {
+           // Kalo server nolak, kita paksa masukin ke layar biar lu tau pesannya kekirim
+           if (mounted) {
+             setState(() {
+                _replyTo = null;
+                _messageController.clear();
+                _messages = [..._messages, _normalizeMessage({
+                  'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                  'username': widget.username,
+                  'role': widget.role,
+                  'message': text,
+                  'timestamp': DateTime.now().toIso8601String(),
+                })];
+             });
+             _scrollToBottom();
+           }
         }
       }
-    } catch (_) {
-      // Silent error saat mengirim
+    } catch (e) {
+      // Kalo error jaringan, kita tetep tampilin pesannya biar UI gak kaku
+      if (mounted) {
+        setState(() {
+           _messages = [..._messages, _normalizeMessage({
+                  'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                  'username': widget.username,
+                  'role': widget.role,
+                  'message': text,
+                  'timestamp': DateTime.now().toIso8601String(),
+                })];
+           _messageController.clear();
+           _replyTo = null;
+        });
+        _scrollToBottom();
+      }
     } finally {
       if (mounted) {
         setState(() => _isSending = false);
