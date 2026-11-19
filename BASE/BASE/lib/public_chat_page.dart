@@ -30,7 +30,8 @@ class _PublicChatPageState extends State<PublicChatPage>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  List> _messages = [];
+  List _messages = [];
+  List _parseMessagesList(dynamic decoded) {
   bool _isLoading = true;
   bool _isSending = false;
   Timer? _pollingTimer;
