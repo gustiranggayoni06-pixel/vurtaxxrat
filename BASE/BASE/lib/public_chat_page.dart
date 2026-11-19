@@ -81,59 +81,59 @@ class _PublicChatPageState extends State<PublicChatPage>
   }
 
   Future<void> _loadMessages() async {
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/publicChat?key=${widget.sessionKey}'),
-      );
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/chat/messages?session_key=${widget.sessionKey}'),
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['valid'] == true) {
-          setState(() {
-            // UDAH GUA BENERIN JUGA DI SINI TUAAN!
-            _messages = (data['messages'] as List).map((e) => e as Map<String, dynamic>).toList();
-            if (_messages.isNotEmpty) {
-              _lastMessageId = _messages.last['id'];
-            }
-          });
-          _scrollToBottom();
-        }
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      // ✅ LANGSUNG CEK APAKAH DATA ITU LIST, BUKAN data['valid']
+      if (data is List) {
+        setState(() {
+          _messages = data.map((e) => e as Map<String, dynamic>).toList();
+          if (_messages.isNotEmpty) {
+            _lastMessageId = _messages.last['id'];
+          }
+        });
+        _scrollToBottom();
       }
-    } catch (e) {
-      print('Error loading messages: $e');
-    } finally {
-      setState(() => _isLoading = false);
     }
+  } catch (e) {
+    print('Error loading messages: $e');
+  } finally {
+    setState(() => _isLoading = false);
   }
+}
 
   Future<void> _pollNewMessages() async {
     if (_isLoading || _messages.isEmpty) return;
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          '$baseUrl/publicChat?key=${widget.sessionKey}&lastId=${_lastMessageId ?? ''}',
-        ),
-      );
+  final response = await http.get(
+    Uri.parse(
+      '$baseUrl/api/chat/messages?session_key=${widget.sessionKey}', // <--- GANTI JADI INI
+    ),
+  );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['valid'] == true && data['hasNew'] == true) {
-          final newMessages = (data['messages'] as List).map((e) => e as Map<String, dynamic>).toList();
-          if (newMessages.isNotEmpty) {
-            setState(() {
-              _messages.addAll(newMessages);
-              _lastMessageId = _messages.last['id'];
-            });
-            _scrollToBottom();
-          }
-        }
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data != null && data is List) { // <--- RESPON DARI NODE.JS ITU LIST LANGSUNG
+      final newMessages = data.map((e) => e as Map<String, dynamic>).toList();
+      if (newMessages.length > _messages.length) {
+        setState(() {
+          _messages = newMessages; // Timpa aja semua biar simpel
+          _lastMessageId = _messages.last['id'];
+        });
+        _scrollToBottom();
       }
-    } catch (e) {
-      // Silent error untuk polling
     }
+  }
+} catch (e) {
+  // Silent error untuk polling
+}
   }
 
   Future<void> _sendMessage() async {
@@ -143,17 +143,19 @@ class _PublicChatPageState extends State<PublicChatPage>
     setState(() => _isSending = true);
 
     try {
-      final body = {
-        'key': widget.sessionKey,
-        'message': text,
-        if (_replyTo != null) 'replyTo': _replyTo!['id'],
-      };
+  final body = {
+    'session_key': widget.sessionKey, // <--- PAKE session_key
+    'username': widget.username,      // <--- TAMBAHIN INI
+    'role': widget.role,              // <--- TAMBAHIN INI
+    'message': text,
+    if (_replyTo != null) 'replyTo': _replyTo!['id'],
+  };
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/publicChat'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/chat/send'), // <--- GANTI JADI /api/chat/send
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(body),
+  );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
