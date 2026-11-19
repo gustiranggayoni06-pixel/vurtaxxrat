@@ -31,7 +31,6 @@ class _PublicChatPageState extends State<PublicChatPage>
   final ScrollController _scrollController = ScrollController();
 
   List _messages = [];
-  List _parseMessagesList(dynamic decoded) {
   bool _isLoading = true;
   bool _isSending = false;
   Timer? _pollingTimer;
@@ -114,7 +113,7 @@ class _PublicChatPageState extends State<PublicChatPage>
     };
   }
 
-  List> _parseMessagesList(dynamic decoded) {
+  List _parseMessagesList(dynamic decoded) {
     final rawList = decoded is List
         ? decoded
         : (decoded is Map && decoded['messages'] is List
