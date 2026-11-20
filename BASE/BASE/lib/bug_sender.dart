@@ -207,136 +207,138 @@ class _BugSenderPageState extends State<BugSenderPage>
   }
 
   // ─── API ────────────────────────────────────────────────────────────────────
-  Future<void> _fetchSenders({bool silent = false}) async {
-    if (!silent) {
+  // ─── API ────────────────────────────────────────────────────────────────────
+Future<void> _fetchSenders({bool silent = false}) async {
+  if (!silent) {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+  }
+
+  try {
+    // ✅ TIMEOUT DINAIKIN JADI 60 DETIK
+    final privateRes = await http.get(
+      Uri.parse("$baseUrl/mySender?key=${widget.sessionKey}"),
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(const Duration(seconds: 60));
+
+    List<dynamic> privateConns = [];
+    if (privateRes.statusCode == 200) {
+      final data = jsonDecode(privateRes.body);
+      if (data["connections"] != null) {
+        if (data["connections"] is Map) {
+          final connMap = data["connections"] as Map;
+          if (connMap["private"] != null) {
+            privateConns = connMap["private"] as List<dynamic>;
+          }
+        } else if (data["connections"] is List) {
+          privateConns = data["connections"] as List<dynamic>;
+        }
+      } else if (data["senderList"] != null) {
+        privateConns = data["senderList"] as List<dynamic>;
+      } else if (data["data"] != null) {
+        privateConns = data["data"] as List<dynamic>;
+      }
+
+      // Handle developer fallback dari backend
+      if (data["isDeveloperFallback"] == true &&
+          data["borrowedAvailable"] != null) {
+        privateConns = data["borrowedAvailable"] as List<dynamic>;
+        privateConns = privateConns.map((c) {
+          final map = Map<String, dynamic>.from(c as Map);
+          map['type'] = 'private';  
+          map['status'] = 'connected';
+          return map;
+        }).toList();
+      }
+
+      // ✅ FALLBACK: kalau developer dan private masih kosong, ambil dari global as private
+      if (widget.role.toLowerCase() == 'developer' && privateConns.isEmpty) {
+        final globalRes2 = await http.get(
+          Uri.parse("$baseUrl/getPublicSenders?key=${widget.sessionKey}"),
+        ).timeout(const Duration(seconds: 30)); // ✅ 30 detik
+        
+        if (globalRes2.statusCode == 200) {
+          final gData = jsonDecode(globalRes2.body);
+          if (gData['valid'] == true && gData['senders'] != null) {
+            privateConns = (gData['senders'] as List).map((s) {
+              final session = s['session']?.toString() ?? '';
+              return {
+                'sessionName': session,
+                'number': session,
+                'type': 'private',
+                'status': 'connected',
+                'isPublic': true,
+                'borrowed': true,
+              };
+            }).where((s) => (s['sessionName'] as String).isNotEmpty).toList();
+          }
+        }
+      }
+    }
+
+    // ✅ TIMEOUT DINAIKIN JADI 60 DETIK
+    final globalRes = await http.get(
+      Uri.parse("$baseUrl/mySender?key=${widget.sessionKey}"), 
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(const Duration(seconds: 60));
+
+    List<dynamic> globalConns = [];
+    if (globalRes.statusCode == 200) {
+      final data = jsonDecode(globalRes.body);
+      if (data['valid'] == true && data['connections'] != null && data['connections']['global'] != null) {
+        final senders = List<dynamic>.from(data['connections']['global']); 
+        globalConns = senders.map((s) {
+          final session = s['sessionName']?.toString() ?? "";
+          final isActive = s['status'] == 'connected';
+          return {
+            'sessionName': session,
+            'number': s['number']?.toString() ?? session,
+            'type': 'global',
+            'isActive': isActive,
+          };
+        }).toList();
+      }
+    }
+
+    // ✅ FIX: Hapus sender global yang juga ada di private milik user ini
+    final privateIds = privateConns
+        .map((c) => c['sessionName']?.toString() ?? c['number']?.toString())
+        .toSet();
+    globalConns = globalConns
+        .where((g) => !privateIds.contains(g['sessionName']?.toString()))
+        .toList();
+
+    privateConns = privateConns.map((c) {
+      final map = Map<String, dynamic>.from(c as Map);
+      map['type'] = map['type'] ?? 'private';
+      return map;
+    }).toList();
+
+    if (mounted) {
       setState(() {
-        isLoading = true;
+        privateSenderList = privateConns;
+        globalSenderList = globalConns;
+        senderList = [...privateConns, ...globalConns];
         errorMessage = null;
       });
+      _listCtrl.forward(from: 0);
     }
-
-    try {
-      final privateRes = await http.get(
-        Uri.parse("$baseUrl/mySender?key=${widget.sessionKey}"),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 15));
-
-      List<dynamic> privateConns = [];
-      if (privateRes.statusCode == 200) {
-        final data = jsonDecode(privateRes.body);
-        if (data["connections"] != null) {
-          if (data["connections"] is Map) {
-            final connMap = data["connections"] as Map;
-            if (connMap["private"] != null) {
-              privateConns = connMap["private"] as List<dynamic>;
-            }
-          } else if (data["connections"] is List) {
-            privateConns = data["connections"] as List<dynamic>;
-          }
-        } else if (data["senderList"] != null) {
-          privateConns = data["senderList"] as List<dynamic>;
-        } else if (data["data"] != null) {
-          privateConns = data["data"] as List<dynamic>;
-        }
-
-        // Handle developer fallback dari backend
-if (data["isDeveloperFallback"] == true &&
-    data["borrowedAvailable"] != null) {
-  privateConns = data["borrowedAvailable"] as List<dynamic>;
-  privateConns = privateConns.map((c) {
-    final map = Map<String, dynamic>.from(c as Map);
-    map['type'] = 'private';  // ✅ Paksa jadi private biar bisa dipilih
-    map['status'] = 'connected';
-    return map;
-  }).toList();
-}
-
-// ✅ FALLBACK: kalau developer dan private masih kosong, 
-// ambil dari global as private
-if (widget.role.toLowerCase() == 'developer' && privateConns.isEmpty) {
-  final globalRes2 = await http.get(
-    Uri.parse("$baseUrl/getPublicSenders?key=${widget.sessionKey}"),
-  ).timeout(const Duration(seconds: 10));
-  
-  if (globalRes2.statusCode == 200) {
-    final gData = jsonDecode(globalRes2.body);
-    if (gData['valid'] == true && gData['senders'] != null) {
-      privateConns = (gData['senders'] as List).map((s) {
-        final session = s['session']?.toString() ?? '';
-        return {
-          'sessionName': session,
-          'number': session,
-          'type': 'private',
-          'status': 'connected',
-          'isPublic': true,
-          'borrowed': true,
-        };
-      }).where((s) => (s['sessionName'] as String).isNotEmpty).toList();
+  } catch (e) {
+    if (mounted && !silent) {
+      // ✅ PESAN ERROR DIUBAH BIAR JELAS
+      setState(() => errorMessage = "Gagal koneksi ke server (Timeout). Cek jaringan lu atau server lagi down, Tuan!");
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+        isRefreshing = false;
+      });
     }
   }
 }
-      }
-
-      final globalRes = await http.get(
-  Uri.parse("$baseUrl/mySender?key=${widget.sessionKey}"), // ✅ GANTI JADI /mySender
-  headers: {'Content-Type': 'application/json'},
-).timeout(const Duration(seconds: 15));
-
-      List<dynamic> globalConns = [];
-if (globalRes.statusCode == 200) {
-  final data = jsonDecode(globalRes.body);
-  if (data['valid'] == true && data['connections'] != null && data['connections']['global'] != null) {
-  final senders = List<dynamic>.from(data['connections']['global']); // ✅ BACA DARI SINI
-  globalConns = senders.map((s) {
-    final session = s['sessionName']?.toString() ?? "";
-    final isActive = s['status'] == 'connected';
-    return {
-      'sessionName': session,
-      'number': s['number']?.toString() ?? session,
-      'type': 'global',
-      'isActive': isActive,
-      // ... sesuaikan field lainnya
-    };
-  }).toList();
-}
-}
-
-// ✅ FIX: Hapus sender global yang juga ada di private milik user ini
-final privateIds = privateConns
-    .map((c) => c['sessionName']?.toString() ?? c['number']?.toString())
-    .toSet();
-globalConns = globalConns
-    .where((g) => !privateIds.contains(g['sessionName']?.toString()))
-    .toList();
-
-      privateConns = privateConns.map((c) {
-        final map = Map<String, dynamic>.from(c as Map);
-        map['type'] = map['type'] ?? 'private';
-        return map;
-      }).toList();
-
-      if (mounted) {
-        setState(() {
-          privateSenderList = privateConns;
-          globalSenderList = globalConns;
-          senderList = [...privateConns, ...globalConns];
-          errorMessage = null;
-        });
-        _listCtrl.forward(from: 0);
-      }
-    } catch (e) {
-      if (mounted && !silent) {
-        setState(() => errorMessage = "Connection failed: $e");
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-          isRefreshing = false;
-        });
-      }
-    }
-  }
 
   Future<void> _refreshSenders() async {
     setState(() => isRefreshing = true);
@@ -349,60 +351,65 @@ globalConns = globalConns
   }
 
   // ✅ Selalu kirim sebagai private, backend akan otomatis promote ke global
-  Future<void> _addSender(String number) async {
-    setState(() => isLoading = true);
-    try {
-      final res = await http.get(
-        Uri.parse("$baseUrl/getPairing?key=${widget.sessionKey}&number=$number&type=private")
-      ).timeout(const Duration(seconds: 30));
-      
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data["valid"] == true) {
-          _showPairingCodeDialog(number, data['pairingCode'] ?? data['code'] ?? '000000');
-        } else {
-          _toast(data['message'] ?? "Failed to generate pairing code", error: true);
-        }
+  // ✅ Selalu kirim sebagai private, backend akan otomatis promote ke global
+Future<void> _addSender(String number) async {
+  setState(() => isLoading = true);
+  try {
+    // ✅ TIMEOUT DINAIKIN JADI 60 DETIK
+    final res = await http.get(
+      Uri.parse("$baseUrl/getPairing?key=${widget.sessionKey}&number=$number&type=private")
+    ).timeout(const Duration(seconds: 60));
+    
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data["valid"] == true) {
+        _showPairingCodeDialog(number, data['pairingCode'] ?? data['code'] ?? '000000');
       } else {
-        _toast("Server error: ${res.statusCode}", error: true);
+        _toast(data['message'] ?? "Failed to generate pairing code", error: true);
       }
-    } catch (e) {
-      _toast("Connection failed: ${e.toString()}", error: true);
-    } finally {
-      setState(() => isLoading = false);
-      _fetchSenders();
+    } else {
+      _toast("Server error: ${res.statusCode}", error: true);
     }
+  } catch (e) {
+    // ✅ PESAN ERROR DIUBAH BIAR JELAS
+    _toast("Koneksi gagal / Timeout, Tuan! Cek jaringan atau server.", error: true);
+  } finally {
+    setState(() => isLoading = false);
+    _fetchSenders();
   }
+}
 
   Future<void> _deleteSender(String senderId) async {
-    if (!canDeleteSender) {
-      _toast("Role ${roleDisplayName(widget.role)} tidak punya izin hapus sender!", error: true);
-      return;
-    }
-
-    setState(() => isLoading = true);
-    try {
-      final res = await http.delete(
-        Uri.parse("$baseUrl/deleteSender?key=${widget.sessionKey}&id=$senderId")
-      ).timeout(const Duration(seconds: 15));
-      
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data["valid"] == true) {
-          _toast("Sender deleted successfully");
-          _fetchSenders();
-        } else {
-          _toast(data["message"] ?? "Failed", error: true);
-        }
-      } else {
-        _toast("Server error: ${res.statusCode}", error: true);
-      }
-    } catch (e) {
-      _toast("Connection failed: ${e.toString()}", error: true);
-    } finally {
-      setState(() => isLoading = false);
-    }
+  if (!canDeleteSender) {
+    _toast("Role ${roleDisplayName(widget.role)} tidak punya izin hapus sender!", error: true);
+    return;
   }
+
+  setState(() => isLoading = true);
+  try {
+    // ✅ TIMEOUT DINAIKIN JADI 60 DETIK
+    final res = await http.delete(
+      Uri.parse("$baseUrl/deleteSender?key=${widget.sessionKey}&id=$senderId")
+    ).timeout(const Duration(seconds: 60));
+    
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data["valid"] == true) {
+        _toast("Sender deleted successfully");
+        _fetchSenders();
+      } else {
+        _toast(data["message"] ?? "Failed", error: true);
+      }
+    } else {
+      _toast("Server error: ${res.statusCode}", error: true);
+    }
+  } catch (e) {
+    // ✅ PESAN ERROR DIUBAH BIAR JELAS
+    _toast("Koneksi gagal / Timeout, Tuan! Cek jaringan atau server.", error: true);
+  } finally {
+    setState(() => isLoading = false);
+  }
+}
 
   void _toast(String msg, {bool error = false}) {
     if (!mounted) return;
