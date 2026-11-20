@@ -160,14 +160,14 @@ class _ThanksToPageState extends State<ThanksToPage> {
           'nama': '⏤͟͟͞𝟕𝟎𝟕 Ranzz',
           'telegram': '@ranzz_offc', 
           'role': 'LEAD DEVELOPER',
-          'avatar': 'https://imagetourls.com/id/v?u=https%3A%2F%2Fcdn.imagetourls.com%2Fuploads%2FtyImg%2Fna8X2YkS.jpg',
+          'avatar': 'https://cdn.phototourl.com/anon/2026-11-20-f6b59493-5cd5-43a3-8d7e-01304b2c70ef.jpg',
           'telegram_url': 'https://t.me/ranzz_offc',
         },
         {
           'nama': 'ᯓ VURTAX X RAT CHANNEL',
           'telegram': '@ranzz_offc', 
           'role': 'TELEGRAM CHANNEL',
-          'avatar': 'https://imagetourls.com/id/v?u=https%3A%2F%2Fcdn.imagetourls.com%2Fuploads%2FtyImg%2FML1TWbxK.jpg',
+          'avatar': 'https://cdn.phototourl.com/anon/2026-11-20-e44ad69f-32fa-4df6-b7d7-196e20aff9b4.jpg',
           'telegram_url': 'https://t.me/ranzz_offc',
         },
       ];
