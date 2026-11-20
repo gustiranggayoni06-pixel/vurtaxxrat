@@ -168,7 +168,7 @@ class _ThanksToPageState extends State<ThanksToPage> {
           'telegram': '@ranzz_offc', 
           'role': 'TELEGRAM CHANNEL',
           'avatar': 'https://cdn.phototourl.com/anon/2026-11-20-e44ad69f-32fa-4df6-b7d7-196e20aff9b4.jpg',
-          'telegram_url': 'https://t.me/ranzz_offc',
+          'telegram_url': 'https://t.me/+IAiZfN1NQrJjZjhl',
         },
       ];
       _isLoading = false;
