@@ -14,6 +14,7 @@ import 'landing.dart';
 import 'public_chat_page.dart';
 // import 'api_config.dart';       // ✅ DIKOMENTAR
 import 'animasi_jendela.dart'; // ✅ TAMBAHIN INI
+import 'spam_otp_page.dart'; // ← Sesuaikan sama nama file elu
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -150,6 +151,12 @@ class MyApp extends StatelessWidget {
               ),
             );
 
+            // ─── SPAM OTP WHATSAPP ──────────────────────────────────
+case '/spam_otp':
+  return MaterialPageRoute(
+    builder: (_) => const SpamOtpPage(), // Panggil class halaman baru elu
+  );
+            
           default:
             return MaterialPageRoute(
               builder: (_) => const Scaffold(

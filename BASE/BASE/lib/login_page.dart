@@ -12,6 +12,7 @@ import 'package:local_auth_android/local_auth_android.dart';
 import 'package:local_auth_darwin/local_auth_darwin.dart';
 import 'api_config.dart';
 import 'splash.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ─── VURTAX X RAT THEME ──────────────────────────────────────────────────────────
 class _C {
