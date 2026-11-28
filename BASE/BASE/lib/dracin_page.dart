@@ -211,37 +211,32 @@ class _DracinPageState extends State<DracinPage> with TickerProviderStateMixin {
   }
   
   Future<void> _fetchDramas({int page = 0}) async {
-    if (_isLoading && page != 0) return;
-    setState(() { _isLoading = true; _errorMessage = ""; });
-    
-    try {
-      final response = await http.get(Uri.parse("http://cp.zyrostore.id:3594/shows?page=$page")).timeout(const Duration(seconds: 15));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        final chineseDramas = data.where((show) {
-          final network = show['network']?['country']?['code'] ?? '';
-          final webChannel = show['webChannel']?['country']?['code'] ?? '';
-          final name = show['name']?.toLowerCase() ?? '';
-          return (network == 'CN' || webChannel == 'CN' || name.contains('chinese') || name.contains('china') ||
-                  _youtubeMapping.keys.any((k) => name.contains(k.toLowerCase())) || show['genres']?.contains('Drama') == true);
-        }).toList();
-        
-        setState(() {
-          if (page == 0) _dramas = chineseDramas;
-          else _dramas.addAll(chineseDramas);
-          _currentPage = page;
-          _hasMore = data.length == 250;
-          _isLoading = false;
-        });
-      } else {
-        setState(() { _errorMessage = "Failed to load dramas"; _isLoading = false; });
-        _loadMockData();
-      }
-    } catch (e) {
-      setState(() { _errorMessage = "Network error"; _isLoading = false; });
+  if (_isLoading && page != 0) return;
+  setState(() { _isLoading = true; _errorMessage = ""; });
+  
+  try {
+    // URL udah bener pake https
+    final response = await http.get(Uri.parse("https://api.tvmaze.com/shows?page=$page")).timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      
+      // ✅ HAPUS FILTER CHINA DI SINI, BIARIN SEMUA DATA MASUK
+      setState(() {
+        if (page == 0) _dramas = data;
+        else _dramas.addAll(data);
+        _currentPage = page;
+        _hasMore = data.length == 250; // TVMaze ngasih 250 per page
+        _isLoading = false;
+      });
+    } else {
+      setState(() { _errorMessage = "Failed to load dramas"; _isLoading = false; });
       _loadMockData();
     }
+  } catch (e) {
+    setState(() { _errorMessage = "Network error"; _isLoading = false; });
+    _loadMockData();
   }
+}
   
   Future<void> _searchDramas(String query) async {
     if (query.isEmpty) {
@@ -251,7 +246,7 @@ class _DracinPageState extends State<DracinPage> with TickerProviderStateMixin {
     setState(() { _isSearching = true; _searchQuery = query; _isLoading = true; });
     
     try {
-      final response = await http.get(Uri.parse("http://cp.zyrostore.id:3594/search/shows?q=${Uri.encodeComponent(query)}")).timeout(const Duration(seconds: 10));
+      final response = await http.get(Uri.parse("https://api.tvmaze.com/search/shows?q=${Uri.encodeComponent(query)}")).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() { _searchResults = data.map((item) => item['show']).toList(); _isLoading = false; });
@@ -279,8 +274,8 @@ class _DracinPageState extends State<DracinPage> with TickerProviderStateMixin {
   Future<void> _fetchDramaDetail(int dramaId) async {
     setState(() { _isLoadingDetail = true; });
     try {
-      final showResponse = await http.get(Uri.parse("http://cp.zyrostore.id:3594/shows/$dramaId")).timeout(const Duration(seconds: 10));
-      final episodesResponse = await http.get(Uri.parse("http://cp.zyrostore.id:3594/shows/$dramaId/episodes")).timeout(const Duration(seconds: 10));
+      final showResponse = await http.get(Uri.parse("https://api.tvmaze.com/shows/$dramaId")).timeout(const Duration(seconds: 10));
+final episodesResponse = await http.get(Uri.parse("https://api.tvmaze.com/shows/$dramaId/episodes")).timeout(const Duration(seconds: 10));
       if (showResponse.statusCode == 200) {
         setState(() {
           _selectedDrama = jsonDecode(showResponse.body);
@@ -625,7 +620,19 @@ class _DracinPageState extends State<DracinPage> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(12),
               child: Stack(
                 children: [
-                  imageUrl.isNotEmpty ? Image.network(imageUrl, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: _C.surface)) : Container(color: _C.surface),
+                  imageUrl.isNotEmpty 
+    ? Image.network(
+        imageUrl, 
+        width: double.infinity, 
+        fit: BoxFit.cover, 
+        errorBuilder: (_, __, ___) => Container(color: _C.surface)
+      ) 
+    : Container(
+        color: _C.surface,
+        child: const Center(
+          child: Icon(Icons.movie, size: 50, color: Colors.grey), // ✅ Ikon default kalau gambar kosong
+        ),
+      ),
                   Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.7)]))),
                   Positioned(
                     bottom: 8, left: 8,

